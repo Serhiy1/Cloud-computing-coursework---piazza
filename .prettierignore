@@ -1,0 +1,9 @@
+.vscode
+.devcontainer
+node_modules
+package-lock.json
+package.json
+readme.md
+tsconfig.json
+.eslintrc.cjs
+.prettierrc.json

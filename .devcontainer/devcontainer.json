@@ -1,0 +1,21 @@
+{
+  "name": "Basic Node.js",
+  "build": {
+     "dockerfile": "Dockerfile",
+      "context": ".."
+    },
+  "remoteUser": "node",
+
+  "features": {
+    "ghcr.io/dhoeric/features/google-cloud-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+		"ms-azuretools.vscode-docker",
+		"rangav.vscode-thunder-client"
+	]
+    }
+  }, "runArgs": ["--env-file","./.env"]
+
+}
