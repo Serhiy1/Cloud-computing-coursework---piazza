@@ -26,6 +26,21 @@
    - `./models` subfolder contains the types for database / API interaction
    - `./utils` contains utility code and classes
 
-   The `dist` folder contains the transpiled javascript that node runs. 
+   The `dist` folder contains the transpiled javascript that is run by node.
 
 
+## Phase C
+### Developing the restful API
+
+#### API for creating and viewing posts
+
+```
+GET ${host}/posts/topics -> return a list of valid topics
+GET ${host}/posts/topics/${topicID} -> return a list of all the posts matching that topic
+
+GET ${host}/posts -> return a list of all the posts without any topic filter
+GET ${host}/posts/${postID} -> view a single post and a list of all the comments on it
+
+POST ${host}/posts -> When the user wants to create a new post
+POST ${host}/posts/${postID} -> When the user wants to comment on a post
+```
