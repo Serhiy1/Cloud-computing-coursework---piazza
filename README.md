@@ -50,3 +50,6 @@ POST ${host}/posts/${postID}/dislike -> When a user dislikes a post
 
 Note: Which posts a User has liked or disliked a comment a refrence to said comment is stored
 in an array on their account
+
+When A user calls a the like endpoint a second time on a post it undoes their previous like
+Same Goes for the dislike beahviour
