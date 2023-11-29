@@ -1,7 +1,8 @@
 import express from "express";
-import { Post, ValidTopics } from "../../models/post";
 import mongoose from "mongoose";
+import {  Post, ValidTopics, createNewPost } from "../../models/post";
 import { HttpError } from "../../utils/utils";
+
 
 export const PostRouter = express.Router();
 
@@ -16,13 +17,8 @@ PostRouter.get("/topics", async (req, res) => {
 
 /* API for listing all posts that are not comments in a specific Topic */
 PostRouter.get("/topics/:topicID", (req, res, next) => {
-  const topicID = req.params.topicID;
 
-  // Check if the topicID is a valid topic
-  if (!Object.values(ValidTopics).includes(topicID as ValidTopics)) {
-    return res.status(400).json({ message: "Invalid topic" });
-  }
-
+  const topicID : string = req.params?.topicID;
   console.log(`listing all posts for topic ${topicID}`);
 
   Post.find({ topics: topicID, parent_id: null })
@@ -73,30 +69,15 @@ PostRouter.get("/:postID", (req, res, next) => {
     });
 });
 
-PostRouter.post("/", (req, res, next) => {
-  const topicsFromRequest: ValidTopics[] = req.body.topics;
-  // Check if all topics from the request are valid
-  const invalidTopics = topicsFromRequest.filter((topic) => !Object.values(ValidTopics).includes(topic));
+PostRouter.post("/", (request, res, next) => {
 
-  // Return error if any invalid topics have been selected
-  if (invalidTopics.length > 0) {
-    return res.status(400).json({
-      message: "Invalid topic(s) provided",
-      invalidTopics: invalidTopics,
-    });
-  }
-
-  // Create a new post object
-  const post = new Post({
+  const topicsFromRequest: ValidTopics[] = request.body.topics;
+  const post = createNewPost({
     _id: new mongoose.Types.ObjectId(),
-    owner_id: new mongoose.Types.ObjectId("65663a1a771a7db15b32e2a6"), // Replace with actual owner ID
-    user_name: "test user name", // Replace with actual username
-    parent_id: null,
-    child_ids: [],
-    content: req.body.content,
-    likes: 0,
-    dislikes: 0,
-    Created: new Date(),
+    ownerId: new mongoose.Types.ObjectId("65663a1a771a7db15b32e2a6"),
+    userName: "test user name",
+    content: request.body.content,
+    created: new Date(),
     topics: topicsFromRequest,
   });
 
@@ -124,16 +105,13 @@ PostRouter.post("/:postID", (req, res, next) => {
       }
 
       // If the parent post exists, create the comment
-      const comment = new Post({
+      const comment = createNewPost({
         _id: new mongoose.Types.ObjectId(),
-        owner_id: new mongoose.Types.ObjectId("65663a1a771a7db15b32e2a6"), // Replace with actual owner ID from auth
-        user_name: "commenter user name", // Replace with actual username from auth
-        parent_id: parentPostId,
-        child_ids: [],
+        ownerId: new mongoose.Types.ObjectId("65663a1a771a7db15b32e2a6"), // Replace with actual owner ID from auth
+        userName: "commenter user name", // Replace with actual username from auth
+        parentId: new mongoose.Types.ObjectId(parentPostId),
         content: req.body.content,
-        likes: 0,
-        dislikes: 0,
-        Created: new Date(),
+        created: new Date(),
         topics: parentPost.topics, // Inherit topics from parent post
       });
 
