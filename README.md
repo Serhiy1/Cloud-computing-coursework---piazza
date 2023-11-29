@@ -36,9 +36,9 @@
 
 ```
 GET ${host}/posts/topics -> return a list of valid topics
-GET ${host}/posts/topics/${topicID} -> return a list of all the posts matching that topic
+GET ${host}/posts/topics/${topicID} -> return a list of all the posts that are not comments matching that topic
 
-GET ${host}/posts -> return a list of all the posts without any topic filter
+GET ${host}/posts -> return a list of all the posts that are not comments without any topic filter
 GET ${host}/posts/${postID} -> view a single post and a list of all the comments on it
 
 POST ${host}/posts -> When the user wants to create a new post

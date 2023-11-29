@@ -1,6 +1,6 @@
 import { Schema, model, ObjectId } from "mongoose";
 
-enum ValidTopics {
+export enum ValidTopics {
   Politics = "Politics",
   Health = "Health",
   Sport = "Sport",
