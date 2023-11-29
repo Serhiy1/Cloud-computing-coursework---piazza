@@ -17,9 +17,9 @@
    - Eslint and prettier were selected as they are the industry defaults
 
 4. Selecting packages and plugins for the project
-   1. body-parser - For de-serialisng JSON objects
-   2. morgan - Logging middle ware for express JS
-   3. Mongoose - For interacting with a mongo DB libaray
+   1. morgan - Logging middle ware for express JS
+   2. Mongoose - For interacting with a mongo DB libaray
+   3. express-validator - validating user input
 
 5. Project structure - The folder structure of the project follows industry standards, all code is located in the `src` folder. The Main entry points are in the root of this folder.
    - `./api/routes` subfolder contains specific handlers for the different API endpoints
@@ -43,4 +43,10 @@ GET ${host}/posts/${postID} -> view a single post and a list of all the comments
 
 POST ${host}/posts -> When the user wants to create a new post
 POST ${host}/posts/${postID} -> When the user wants to comment on a post
+
+POST ${host}/posts/${postID}/like -> When a user likes a post
+POST ${host}/posts/${postID}/dislike -> When a user dislikes a post
 ```
+
+Note: Which posts a User has liked or disliked a comment a refrence to said comment is stored
+in an array on their account

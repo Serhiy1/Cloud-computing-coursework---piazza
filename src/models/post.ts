@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import { Schema, model } from "mongoose";
-import { body, param  } from "express-validator";
+import { Schema, model, ObjectId } from "mongoose";
+import { body, param } from "express-validator";
 
 export enum ValidTopics {
   Politics = "Politics",
@@ -54,10 +54,39 @@ const PostSchema = new Schema<IPOST>({
 // 3. Create a Model.
 export const Post = model<IPOST>("Post", PostSchema);
 
-
 // === Validators related to Posts ===
 
-// factory for type safety
+/* factory method for type safety */
 export function createNewPost(data: IPOST) {
   return new Post(data);
 }
+
+export const PostIDParamVal = () =>
+  param("postID")
+    .exists()
+    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .withMessage("invalid PostID porvided");
+
+/* validator for making sure the content of posts works */
+export const ContentVal = () =>
+  body("content")
+    .isString()
+    .isLength({ min: 1, max: 512 })
+    .withMessage("content should be text between 1 and 512 charaters");
+
+/* validator for making sure users input the correct topic */
+export const TopicVal = () =>
+  body("topics")
+    .isArray({ min: 1 })
+    .withMessage("Topics array must have at least one topic")
+    .custom((topics) => {
+      return topics.every((topic: ValidTopics) => Object.values(ValidTopics).includes(topic));
+    })
+    .withMessage("Invalid topic(s) provided");
+
+/* validator for TopicId paramater */
+export const TopicParamVal = () =>
+  param("topicID")
+    .exists()
+    .custom((value) => Object.values(ValidTopics).includes(value))
+    .withMessage("Invalid topicID provided");

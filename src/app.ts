@@ -15,9 +15,8 @@ export const app = express();
 // enable global logging on the project
 app.use(morgan("dev"));
 
-// enable custom JSON parser middleware
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+// enable custom JSON
+app.use(express.json());
 
 // handle requests for known routes
 app.use("/posts", PostRouter);

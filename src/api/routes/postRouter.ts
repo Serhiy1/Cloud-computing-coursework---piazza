@@ -1,8 +1,16 @@
 import express from "express";
 import mongoose from "mongoose";
-import {  Post, ValidTopics, createNewPost } from "../../models/post";
+import {
+  ContentVal,
+  Post,
+  TopicParamVal,
+  TopicVal,
+  ValidTopics,
+  createNewPost,
+  PostIDParamVal,
+} from "../../models/post";
 import { HttpError } from "../../utils/utils";
-
+import { validationResult, matchedData } from "express-validator";
 
 export const PostRouter = express.Router();
 
@@ -16,9 +24,15 @@ PostRouter.get("/topics", async (req, res) => {
 });
 
 /* API for listing all posts that are not comments in a specific Topic */
-PostRouter.get("/topics/:topicID", (req, res, next) => {
+PostRouter.get("/topics/:topicID", TopicParamVal(), (req, res, next) => {
+  const result = validationResult(req);
+  console.log(result);
+  if (!result.isEmpty()) {
+    return res.status(400).json(result.array());
+  }
 
-  const topicID : string = req.params?.topicID;
+  const topicID = matchedData(req).topicID;
+
   console.log(`listing all posts for topic ${topicID}`);
 
   Post.find({ topics: topicID, parent_id: null })
@@ -46,8 +60,13 @@ PostRouter.get("/", (req, res, next) => {
 });
 
 /* Get a single Post and its comments */
-PostRouter.get("/:postID", (req, res, next) => {
-  const postID = req.params.postID;
+PostRouter.get("/:postID", PostIDParamVal(), (req, res, next) => {
+  const result = validationResult(req);
+  if (!result.isEmpty()) {
+    return res.status(400).json(result.array());
+  }
+
+  const postID = matchedData(req).postID;
 
   Post.findById(postID)
     .then((post) => {
@@ -69,14 +88,20 @@ PostRouter.get("/:postID", (req, res, next) => {
     });
 });
 
-PostRouter.post("/", (request, res, next) => {
+PostRouter.post("/", ContentVal(), TopicVal(), (req, res, next) => {
+  const result = validationResult(req);
+  if (!result.isEmpty()) {
+    return res.status(400).json(result.array());
+  }
 
-  const topicsFromRequest: ValidTopics[] = request.body.topics;
+  const topicsFromRequest: ValidTopics[] = matchedData(req).topics;
+  const postContent: string = matchedData(req).content;
+
   const post = createNewPost({
     _id: new mongoose.Types.ObjectId(),
     ownerId: new mongoose.Types.ObjectId("65663a1a771a7db15b32e2a6"),
     userName: "test user name",
-    content: request.body.content,
+    content: postContent,
     created: new Date(),
     topics: topicsFromRequest,
   });
@@ -93,8 +118,14 @@ PostRouter.post("/", (request, res, next) => {
     });
 });
 
-PostRouter.post("/:postID", (req, res, next) => {
-  const parentPostId = req.params.postID;
+PostRouter.post("/:postID", PostIDParamVal(), ContentVal(), (req, res, next) => {
+  const result = validationResult(req);
+  if (!result.isEmpty()) {
+    return res.status(400).json(result.array());
+  }
+
+  const parentPostId = matchedData(req).postID;
+  const postContent: string = matchedData(req).content;
 
   // Check if the parent post exists
   Post.findById(parentPostId)
@@ -110,12 +141,12 @@ PostRouter.post("/:postID", (req, res, next) => {
         ownerId: new mongoose.Types.ObjectId("65663a1a771a7db15b32e2a6"), // Replace with actual owner ID from auth
         userName: "commenter user name", // Replace with actual username from auth
         parentId: new mongoose.Types.ObjectId(parentPostId),
-        content: req.body.content,
+        content: postContent,
         created: new Date(),
         topics: parentPost.topics, // Inherit topics from parent post
       });
 
-      return comment.save(); // Return the save operation's promise
+      return comment.save();
     })
     .then((savedComment) => {
       // Check if the operation was stopped earlier
