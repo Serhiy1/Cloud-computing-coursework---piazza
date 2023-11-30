@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { Schema, model, ObjectId } from "mongoose";
+import { Schema, model } from "mongoose";
 import { body, param } from "express-validator";
 
 export enum ValidTopics {
@@ -40,10 +40,10 @@ interface IPOST {
 // 2. Create a Schema corresponding to the document interface.
 const PostSchema = new Schema<IPOST>({
   _id: { type: Schema.Types.ObjectId, required: true },
-  ownerId: { type: Schema.Types.ObjectId, required: true },
+  ownerId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
   userName: { type: String, required: true },
-  parentId: { type: Schema.Types.ObjectId, required: false, default: null },
-  childIds: { type: [Schema.Types.ObjectId], required: false, default: [] },
+  parentId: { type: Schema.Types.ObjectId, required: false, default: null, ref: "Post" },
+  childIds: { type: [Schema.Types.ObjectId], required: false, default: [], ref: "Post" },
   content: { type: String, required: true },
   likes: { type: Number, required: false, default: 0 },
   dislikes: { type: Number, required: false, default: 0 },
@@ -51,7 +51,36 @@ const PostSchema = new Schema<IPOST>({
   topics: { type: [String], enum: Object.values(ValidTopics), required: true },
 });
 
-// 3. Create a Model.
+// 3. Add a toJson Method, This gets called implicitly
+PostSchema.set("toJSON", {
+  transform: (document, returnedObject) => {
+    // Remove MongoDB _id and __v
+    returnedObject.link = `localhost:3000/posts/${returnedObject._id}`;
+    returnedObject.user_link = `localhost:3000/users/${returnedObject.ownerId}`;
+    delete returnedObject._id;
+    delete returnedObject.__v;
+    delete returnedObject.ownerId;
+
+    // Remove parentId if it is null
+    if (!returnedObject.parentId) {
+      delete returnedObject.parentId;
+    }
+
+    // Convert childIds array to a count of comments
+    if (returnedObject.childIds && Array.isArray(returnedObject.childIds)) {
+      returnedObject.comments = returnedObject.childIds.length;
+      delete returnedObject.childIds;
+    } else {
+      returnedObject.comments = 0;
+    }
+
+    // Add a status field. TODO update this to automatically calculate if the post is
+    // active or Not
+    returnedObject.status = "Active";
+  },
+});
+
+// 4. Create a Model.
 export const Post = model<IPOST>("Post", PostSchema);
 
 // === Validators related to Posts ===

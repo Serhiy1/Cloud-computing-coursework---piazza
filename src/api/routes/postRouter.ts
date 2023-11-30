@@ -62,6 +62,7 @@ PostRouter.get("/", (req, res, next) => {
 /* Get a single Post and its comments */
 PostRouter.get("/:postID", PostIDParamVal(), (req, res, next) => {
   const result = validationResult(req);
+
   if (!result.isEmpty()) {
     return res.status(400).json(result.array());
   }
@@ -127,6 +128,8 @@ PostRouter.post("/:postID", PostIDParamVal(), ContentVal(), (req, res, next) => 
   const parentPostId = matchedData(req).postID;
   const postContent: string = matchedData(req).content;
 
+  // TODO: Check if the post is active
+
   // Check if the parent post exists
   Post.findById(parentPostId)
     .then((parentPost) => {
@@ -163,7 +166,6 @@ PostRouter.post("/:postID", PostIDParamVal(), ContentVal(), (req, res, next) => 
     });
 });
 
-
 PostRouter.post("/:postID/like", PostIDParamVal(), (req, res, next) => {
   const result = validationResult(req);
   if (!result.isEmpty()) {
@@ -172,18 +174,17 @@ PostRouter.post("/:postID/like", PostIDParamVal(), (req, res, next) => {
   const postID = matchedData(req).postID;
 
   Post.findByIdAndUpdate(postID, { $inc: { likes: 1 } }, { new: true })
-    .then(updatedPost => {
+    .then((updatedPost) => {
       if (!updatedPost) {
         return res.status(404).json({ message: "Post not found" });
       }
       res.status(200).json(updatedPost);
     })
-    .catch(error => {
+    .catch((error) => {
       const httpError = new HttpError(500, error.message);
       next(httpError);
     });
 });
-
 
 PostRouter.post("/:postID/dislike", PostIDParamVal(), (req, res, next) => {
   const result = validationResult(req);
@@ -194,13 +195,13 @@ PostRouter.post("/:postID/dislike", PostIDParamVal(), (req, res, next) => {
   const postID = matchedData(req).postID;
 
   Post.findByIdAndUpdate(postID, { $inc: { dislikes: 1 } }, { new: true })
-    .then(updatedPost => {
+    .then((updatedPost) => {
       if (!updatedPost) {
         return res.status(404).json({ message: "Post not found" });
       }
       res.status(200).json(updatedPost);
     })
-    .catch(error => {
+    .catch((error) => {
       const httpError = new HttpError(500, error.message);
       next(httpError);
     });
