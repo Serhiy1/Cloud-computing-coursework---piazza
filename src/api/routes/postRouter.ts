@@ -114,7 +114,7 @@ PostRouter.post("/:postID", PostIDParam(), Content(), async (req, res, next) => 
     // Check if the post is active
     // @ts-ignore
     if (!parentPost.isActive()) {
-      return next(new HttpError(400, "The post is no longer active, you cannot interactive with it"));
+      return next(new HttpError(400, "The post is no longer active, you cannot interact with it"));
     }
 
     // If the parent post exists, create the comment
@@ -146,10 +146,20 @@ PostRouter.post("/:postID/like", PostIDParam(), async (req, res, next) => {
 
     const postID = matchedData(req).postID;
 
-    const updatedPost = await Post.findByIdAndUpdate(postID, { $inc: { likes: 1 } }, { new: true });
-    if (!updatedPost) {
-      return res.status(404).json({ message: "Post not found" });
+    const post = await Post.findById(postID);
+    if (!post) {
+      return next(new HttpError(400, "The post does not exist"));
     }
+    // @ts-ignore
+    if (!post.isActive()) {
+      return next(new HttpError(400, "The post is no longer active, you cannot interact with it"));
+    }
+
+    // Increment the likes
+    post.likes = (post.likes || 0) + 1;
+
+    // Save the updated post
+    const updatedPost = await post.save();
 
     res.status(200).json(updatedPost);
   } catch (error) {
@@ -166,10 +176,20 @@ PostRouter.post("/:postID/dislike", PostIDParam(), async (req, res, next) => {
 
     const postID = matchedData(req).postID;
 
-    const updatedPost = await Post.findByIdAndUpdate(postID, { $inc: { dislikes: 1 } }, { new: true });
-    if (!updatedPost) {
-      return res.status(404).json({ message: "Post not found" });
+    const post = await Post.findById(postID);
+    if (!post) {
+      return next(new HttpError(400, "The post does not exist"));
     }
+    // @ts-ignore
+    if (!post.isActive()) {
+      return next(new HttpError(400, "The post is no longer active, you cannot interact with it"));
+    }
+
+    // Increment the dislikes
+    post.dislikes = (post.dislikes || 0) + 1;
+
+    // Save the updated post
+    const updatedPost = await post.save();
 
     res.status(200).json(updatedPost);
   } catch (error) {
