@@ -1,13 +1,13 @@
 import express from "express";
 import mongoose from "mongoose";
 import {
-  ContentVal,
+  Content,
   Post,
-  TopicParamVal,
-  TopicVal,
+  TopicParam,
+  Topic,
   ValidTopics,
   createNewPost,
-  PostIDParamVal,
+  PostIDParam,
 } from "../../models/post";
 import { HttpError } from "../../utils/utils";
 import { validationResult, matchedData } from "express-validator";
@@ -24,9 +24,8 @@ PostRouter.get("/topics", async (req, res) => {
 });
 
 /* API for listing all posts that are not comments in a specific Topic */
-PostRouter.get("/topics/:topicID", TopicParamVal(), (req, res, next) => {
+PostRouter.get("/topics/:topicID", TopicParam(), (req, res, next) => {
   const result = validationResult(req);
-  console.log(result);
   if (!result.isEmpty()) {
     return res.status(400).json(result.array());
   }
@@ -60,7 +59,7 @@ PostRouter.get("/", (req, res, next) => {
 });
 
 /* Get a single Post and its comments */
-PostRouter.get("/:postID", PostIDParamVal(), (req, res, next) => {
+PostRouter.get("/:postID", PostIDParam(), (req, res, next) => {
   const result = validationResult(req);
 
   if (!result.isEmpty()) {
@@ -89,7 +88,7 @@ PostRouter.get("/:postID", PostIDParamVal(), (req, res, next) => {
     });
 });
 
-PostRouter.post("/", ContentVal(), TopicVal(), (req, res, next) => {
+PostRouter.post("/", Content(), Topic(), (req, res, next) => {
   const result = validationResult(req);
   if (!result.isEmpty()) {
     return res.status(400).json(result.array());
@@ -119,7 +118,7 @@ PostRouter.post("/", ContentVal(), TopicVal(), (req, res, next) => {
     });
 });
 
-PostRouter.post("/:postID", PostIDParamVal(), ContentVal(), (req, res, next) => {
+PostRouter.post("/:postID", PostIDParam(), Content(), (req, res, next) => {
   const result = validationResult(req);
   if (!result.isEmpty()) {
     return res.status(400).json(result.array());
@@ -166,7 +165,7 @@ PostRouter.post("/:postID", PostIDParamVal(), ContentVal(), (req, res, next) => 
     });
 });
 
-PostRouter.post("/:postID/like", PostIDParamVal(), (req, res, next) => {
+PostRouter.post("/:postID/like", PostIDParam(), (req, res, next) => {
   const result = validationResult(req);
   if (!result.isEmpty()) {
     return res.status(400).json(result.array());
@@ -186,7 +185,7 @@ PostRouter.post("/:postID/like", PostIDParamVal(), (req, res, next) => {
     });
 });
 
-PostRouter.post("/:postID/dislike", PostIDParamVal(), (req, res, next) => {
+PostRouter.post("/:postID/dislike", PostIDParam(), (req, res, next) => {
   const result = validationResult(req);
   if (!result.isEmpty()) {
     return res.status(400).json(result.array());

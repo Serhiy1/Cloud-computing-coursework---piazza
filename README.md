@@ -20,6 +20,7 @@
    1. morgan - Logging middle ware for express JS
    2. Mongoose - For interacting with a mongo DB libaray
    3. express-validator - validating user input
+   4. bycrypt - hashing passwords so they are not stored as plain text
 
 5. Project structure - The folder structure of the project follows industry standards, all code is located in the `src` folder. The Main entry points are in the root of this folder.
    - `./api/routes` subfolder contains specific handlers for the different API endpoints

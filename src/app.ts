@@ -1,4 +1,3 @@
-import bodyParser from "body-parser";
 import type { ErrorRequestHandler } from "express";
 import express from "express";
 import mongoose from "mongoose";
@@ -6,6 +5,7 @@ import morgan from "morgan";
 
 import { GetEnvValue, HttpError } from "./utils/utils";
 import { PostRouter } from "./api/routes/postRouter";
+import { userRouter } from "./api/routes/userRouter";
 
 const connectionString = GetEnvValue("MongoConnectionString");
 
@@ -20,6 +20,7 @@ app.use(express.json());
 
 // handle requests for known routes
 app.use("/posts", PostRouter);
+app.use("/user", userRouter);
 
 // Deal cross resource compatibility with single page applications
 app.use((req, res, next) => {

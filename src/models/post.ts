@@ -51,6 +51,16 @@ const PostSchema = new Schema<IPOST>({
   topics: { type: [String], enum: Object.values(ValidTopics), required: true },
 });
 
+
+PostSchema.methods.isActive = function() {
+
+  const now = new Date();
+  const createdDate : Date = this.created;
+  const diffTime = Math.abs(now.valueOf() - createdDate.valueOf());
+  const diffHours = diffTime / (1000 * 60 * 60); // convert milliseconds to hours
+  return diffHours < 24;
+}
+
 // 3. Add a toJson Method, This gets called implicitly
 PostSchema.set("toJSON", {
   transform: (document, returnedObject) => {
@@ -74,9 +84,8 @@ PostSchema.set("toJSON", {
       returnedObject.comments = 0;
     }
 
-    // Add a status field. TODO update this to automatically calculate if the post is
-    // active or Not
-    returnedObject.status = "Active";
+    // @ts-ignore
+    // returnedObject.status = document.isActive() ? "Active" : "Inactive";;
   },
 });
 
@@ -90,21 +99,21 @@ export function createNewPost(data: IPOST) {
   return new Post(data);
 }
 
-export const PostIDParamVal = () =>
+export const PostIDParam = () =>
   param("postID")
     .exists()
     .custom((value) => mongoose.Types.ObjectId.isValid(value))
     .withMessage("invalid PostID porvided");
 
 /* validator for making sure the content of posts works */
-export const ContentVal = () =>
+export const Content = () =>
   body("content")
     .isString()
     .isLength({ min: 1, max: 512 })
     .withMessage("content should be text between 1 and 512 charaters");
 
 /* validator for making sure users input the correct topic */
-export const TopicVal = () =>
+export const Topic = () =>
   body("topics")
     .isArray({ min: 1 })
     .withMessage("Topics array must have at least one topic")
@@ -114,7 +123,7 @@ export const TopicVal = () =>
     .withMessage("Invalid topic(s) provided");
 
 /* validator for TopicId paramater */
-export const TopicParamVal = () =>
+export const TopicParam = () =>
   param("topicID")
     .exists()
     .custom((value) => Object.values(ValidTopics).includes(value))
