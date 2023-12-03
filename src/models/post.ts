@@ -51,15 +51,14 @@ const PostSchema = new Schema<IPOST>({
   topics: { type: [String], enum: Object.values(ValidTopics), required: true },
 });
 
-
-PostSchema.methods.isActive = function() {
-
+/* Method on post to calculate on the fly if its active*/
+PostSchema.methods.isActive = function () {
   const now = new Date();
-  const createdDate : Date = this.created;
+  const createdDate: Date = this.created;
   const diffTime = Math.abs(now.valueOf() - createdDate.valueOf());
   const diffHours = diffTime / (1000 * 60 * 60); // convert milliseconds to hours
   return diffHours < 24;
-}
+};
 
 // 3. Add a toJson Method, This gets called implicitly
 PostSchema.set("toJSON", {
@@ -85,7 +84,7 @@ PostSchema.set("toJSON", {
     }
 
     // @ts-ignore
-    // returnedObject.status = document.isActive() ? "Active" : "Inactive";;
+    returnedObject.status = document.isActive() ? "Active" : "Inactive";
   },
 });
 
