@@ -30,17 +30,75 @@
 
    The `dist` folder contains the transpiled javascript that is run by node.
 
-### Running the app locally. 
+### Running the app locally.
 
 ## Phase B
 ### user Authentication
 
+**API Paths**
 ```
-POST ${host}/user/signup -> user posts email, username and password to register themseleves on the app
-POST ${host}/user/login -> user posts email and password to authenticate themselves and recive a JWT token
+POST ${host}/user/signup -> user posts email, username and password to register themselves on the app
+POST ${host}/user/login -> user posts email and password to authenticate themselves and receive a JWT token
 
 GET ${host}/user -> User can see their own public details
 GET ${host}/user/${userID} -> User can see the public  details of other users
+
+```
+
+**When Signing up the following payload needs to be sent**
+```
+{
+  "email": "${email}",
+  "password" : "${password}",
+  "userName" : "${username}"
+}
+```
+
+A 200 response containing the Public view of the User is returned when signing up
+A 409 response is returned if an email or username is already in use
+A 400 response is returned if any of the fields are missing
+A 400 response is returned if the password complexity is not met: 8 char min, 1 capital, 1 number, 1 symbol
+
+**When logging in the following payload needs to be sent**
+```
+{
+  "email": "${email}",
+  "password" : "${password}"
+}
+```
+A 400 response is returns if any of the fields are missing
+A 403 response is returned when the username or password does not match
+A 200 response is returned when successfully logging in `{message: "auth succeeded", "token" : "${jwt token}"}`
+
+**when Viewing a user or yourself**
+
+A 400 response is returned when the user ID does not exist
+
+When A user is successfully found the returned format is
+```
+{
+  "user": {
+    "userName": "${username}",
+    "email": "${email}",
+    "likedComments": [
+      ${mongo ID}
+    ],
+    "diLikedComments": [
+      ${mongo ID}
+    ]
+  },
+  "posts": [
+    {
+      ${Post JSON}
+    }
+  ],
+  "comments": [
+    {
+      ${Post JSON}
+    }
+
+  ]
+}
 ```
 
 
@@ -49,6 +107,50 @@ GET ${host}/user/${userID} -> User can see the public  details of other users
 
 #### API for creating and viewing posts
 
+**Global Rules**
+- User cannot like, dislike or comment on post that is marked as inactive
+- All Posts go inactive after an hour
+   - When attempting to interact with an inactive comment as 400 response is returned
+
+- All API endpoints on /post require a jwt token from the /login endpoint
+   - When attempting to interact without a token a 403 response is returned
+
+- All posts require atlas one topic entry in `"politics", "Health", "sport", "Tech"`
+
+**Liking, disliking and commenting on Posts**
+
+- when a person likes a post that they have already disliked it un-does the dislike and vice versa
+- When a person likes/dislikes a post a second time it un-does the first action
+- When a person creates a Post the parent field is hidden
+- When a person comments on a Post the parentId field is present
+   - The comment count of the parent should also increase
+
+**POST JSON Response**
+```
+{
+   "userName": "${username}",
+   "content": "this post is about some tech",
+   "likes": 0,
+   "dislikes": 0,
+   "created": "2023-12-05T15:06:58.468Z",
+   "topics": ["Tech"],
+   "link": "${host}/posts/${mongo ID}",
+   "user_link": "${host}/users/${mongo ID}",
+   "post_type": "Post",  # or Comment
+   "comments": 1,
+   "status": "Active" # or "inactive"
+}
+```
+**When Creating a Post the user needs to post**
+```
+{
+  "Topics" : [${valid topic}]
+  "content" : "${content}"
+}
+
+```
+
+**API Paths**
 ```
 GET ${host}/posts/topics -> return a list of valid topics
 GET ${host}/posts/topics/${topicID} -> return a list of all the posts that are not comments matching that topic
@@ -61,10 +163,5 @@ POST ${host}/posts/${postID} -> When the user wants to comment on a post
 
 POST ${host}/posts/${postID}/like -> When a user likes a post
 POST ${host}/posts/${postID}/dislike -> When a user dislikes a post
+
 ```
-
-Note: Which posts a User has liked or disliked a comment a refrence to said comment is stored
-in an array on their account
-
-When A user calls a the like endpoint a second time on a post it undoes their previous like
-Same Goes for the dislike beahviour
