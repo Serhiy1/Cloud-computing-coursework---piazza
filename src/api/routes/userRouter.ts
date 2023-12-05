@@ -17,7 +17,7 @@ userRouter.post("/signup", V_email(), V_password(), V_username(), async (req, re
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-      return res.status(400).json(result.array());
+      return next(new HttpError(400, result.array()));
     }
 
     const email = matchedData(req).email;
@@ -26,13 +26,13 @@ userRouter.post("/signup", V_email(), V_password(), V_username(), async (req, re
     // Check if the email already exists
     const existingUserByEmail = await User.findOne({ email });
     if (existingUserByEmail) {
-      return res.status(409).json({ message: "Email already in use" });
+      return next(new HttpError(409, "Email already in use"));
     }
 
     // Check if the username already exists
     const existingUserByUsername = await User.findOne({ userName });
     if (existingUserByUsername) {
-      return res.status(409).json({ message: "Username already in use" });
+      return next(new HttpError(409, "Username already in use"));
     }
 
     // Hash the password and create a new user
@@ -59,7 +59,7 @@ userRouter.post("/login", V_email(), passwordExists(), async (req, res, next) =>
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-      return res.status(400).json(result.array());
+      return next(new HttpError(400, result.array()));
     }
 
     const email = matchedData(req).email;
@@ -82,7 +82,7 @@ userRouter.post("/login", V_email(), passwordExists(), async (req, res, next) =>
         email: existingUser.email,
         username: existingUser.userName,
         id: existingUser._id,
-      } ,
+      },
       JWTSignKey,
       { expiresIn: "1 hour" }
     );
@@ -95,38 +95,33 @@ userRouter.post("/login", V_email(), passwordExists(), async (req, res, next) =>
 
 /* Enpoint for viewing user info and thier comments */
 userRouter.get("/:userID", userIDParam(), checkAuth, async (req, res, next) => {
-
   try {
-
     const result = validationResult(req);
     if (!result.isEmpty()) {
-      return res.status(400).json(result.array());
+      return next(new HttpError(400, result.array()));
     }
 
     const userId = matchedData(req).userId;
 
-    const user = await User.findById(userId)
+    const user = await User.findById(userId);
 
-    if (!user){
-      return next(new HttpError(404, "user not found"))
+    if (!user) {
+      return next(new HttpError(404, "user not found"));
     }
 
-    return res.status(200).json(user)
+    return res.status(200).json(user);
   } catch (error) {
-    next(new HttpError(500, (error as Error).message))
+    next(new HttpError(500, (error as Error).message));
   }
-
 });
 
-
 /* Enpoint for viewing own user info */
-userRouter.get("/", checkAuth, async(req, res, next) => {
-  const tokenInfo = getUser(req)
+userRouter.get("/", checkAuth, async (req, res, next) => {
+  const tokenInfo = getUser(req);
   try {
-    const user = await User.findById(tokenInfo.id)
-    return res.status(200).json(user)
+    const user = await User.findById(tokenInfo.id);
+    return res.status(200).json(user);
   } catch (error) {
-    next(new HttpError(500, (error as Error).message))
+    next(new HttpError(500, (error as Error).message));
   }
-
 });

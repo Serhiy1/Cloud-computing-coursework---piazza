@@ -1,9 +1,11 @@
+import { ValidationError } from "express-validator";
+
 /* Custom Error Object for typescipt compatibility*/
 export class HttpError {
   statuscode: number;
-  message: string | null | undefined;
+  message: string | null | undefined | ValidationError[];
 
-  constructor(status?: number, message?: string) {
+  constructor(status?: number, message?: string | ValidationError[]) {
     this.statuscode = status || 500;
     this.message = message;
   }

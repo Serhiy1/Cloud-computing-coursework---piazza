@@ -4,9 +4,9 @@ import { JWTSignKey } from "../app";
 import { HttpError } from "./utils";
 
 interface tokenInfo {
-  email: string,
-  username: string,
-  id: string,
+  email: string;
+  username: string;
+  id: string;
 }
 
 export const checkAuth = (req: Request, res: Response, next: NextFunction) => {
@@ -25,8 +25,8 @@ export const checkAuth = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export function getUser(req: Request) : tokenInfo {
+export function getUser(req: Request): tokenInfo {
   // the check auth middleware should have already verified that the token is valid
   const [prefix, token] = (req.headers.authorization as string).split(" ");
-  return (jwt.decode(token) as tokenInfo);
+  return jwt.decode(token) as tokenInfo;
 }

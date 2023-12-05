@@ -21,7 +21,7 @@ PostRouter.get("/topics/:topicID", checkAuth, TopicParam(), async (req, res, nex
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-      return res.status(400).json(result.array());
+      return next(new HttpError(400, result.array()));
     }
 
     const topicID = matchedData(req).topicID;
@@ -51,14 +51,14 @@ PostRouter.get("/:postID", checkAuth, PostIDParam(), async (req, res, next) => {
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-      return res.status(400).json(result.array());
+      return next(new HttpError(400, result.array()));
     }
 
     const postID = matchedData(req).postID;
 
     const post = await Post.findById(postID);
     if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+      return next(new HttpError(404, "Post not found"));
     }
 
     const comments = await Post.find({ _id: { $in: post.childIds } });
@@ -73,7 +73,7 @@ PostRouter.post("/", checkAuth, V_Content(), V_Topic(), async (req, res, next) =
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-      return res.status(400).json(result.array());
+      return next(new HttpError(400, result.array()));
     }
 
     const topicsFromRequest = matchedData(req).topics;
@@ -100,7 +100,7 @@ PostRouter.post("/:postID", PostIDParam(), V_Content(), async (req, res, next) =
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-      return res.status(400).json(result.array());
+      return next(new HttpError(400, result.array()));
     }
 
     const parentPostId = matchedData(req).postID;
@@ -109,7 +109,7 @@ PostRouter.post("/:postID", PostIDParam(), V_Content(), async (req, res, next) =
     // Check if the parent post exists
     const parentPost = await Post.findById(parentPostId);
     if (!parentPost) {
-      return res.status(404).json({ message: "Parent post not found" });
+      return next(new HttpError(404, "Parent Post not found"));
     }
 
     // Check if the post is active
@@ -142,7 +142,7 @@ PostRouter.post("/:postID/like", PostIDParam(), async (req, res, next) => {
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-      return res.status(400).json(result.array());
+      return next(new HttpError(400, result.array()));
     }
 
     const postID = matchedData(req).postID;
@@ -172,7 +172,7 @@ PostRouter.post("/:postID/dislike", PostIDParam(), async (req, res, next) => {
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
-      return res.status(400).json(result.array());
+      return next(new HttpError(400, result.array()));
     }
 
     const postID = matchedData(req).postID;
