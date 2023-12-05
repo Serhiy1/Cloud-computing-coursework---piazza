@@ -9,6 +9,7 @@ import { User, V_email, V_password, V_username, newUser, passwordExists, userIDP
 import { JWTSignKey } from "../../app";
 import { HttpError } from "../../utils/utils";
 import { checkAuth, getUser } from "../../utils/auth";
+import { Post } from "../../models/post";
 
 export const userRouter = express.Router();
 
@@ -44,6 +45,8 @@ userRouter.post("/signup", V_email(), V_password(), V_username(), async (req, re
       email: email,
       userName: userName,
       passwordHash: passwordHash,
+      likedComments: [],
+      diLikedComments: [],
     });
 
     // Save the new user
@@ -109,7 +112,10 @@ userRouter.get("/:userID", userIDParam(), checkAuth, async (req, res, next) => {
       return next(new HttpError(404, "user not found"));
     }
 
-    return res.status(200).json(user);
+    const posts: (typeof Post)[] = await Post.find({ ownerId: user._id, parentId: null});
+    const comments = await Post.find({ ownerId: user._id, parentId: { $ne: null } });
+
+    return res.status(200).json({ user: user, "posts": posts, comments: comments });
   } catch (error) {
     next(new HttpError(500, (error as Error).message));
   }
@@ -120,7 +126,15 @@ userRouter.get("/", checkAuth, async (req, res, next) => {
   const tokenInfo = getUser(req);
   try {
     const user = await User.findById(tokenInfo.id);
-    return res.status(200).json(user);
+
+    if (!user) {
+      return next(new HttpError(404, "user not found"));
+    }
+
+    const posts: (typeof Post)[] = await Post.find({ ownerId: user._id, parentId: null});
+    const comments = await Post.find({ ownerId: user._id, parentId: { $ne: null } });
+
+    return res.status(200).json({ user: user, "posts": posts, comments: comments });
   } catch (error) {
     next(new HttpError(500, (error as Error).message));
   }

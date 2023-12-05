@@ -1,5 +1,6 @@
 import mongoose, { Schema, model, ObjectId } from "mongoose";
 import { body, param } from "express-validator";
+import { Post } from "./post";
 
 // 1. Create an interface representing a document in MongoDB.
 interface IUser {
@@ -7,8 +8,9 @@ interface IUser {
   userName: string;
   email: string;
   passwordHash: string;
-  likedComments?: ObjectId[];
-  diLikedComments?: ObjectId[];
+  likedComments: ObjectId[];
+  diLikedComments: ObjectId[];
+  comments?: (typeof Post)[];
 }
 
 // 2. Create a Schema corresponding to the document interface.

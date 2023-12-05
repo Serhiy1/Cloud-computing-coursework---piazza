@@ -3,12 +3,13 @@ import mongoose from "mongoose";
 import { V_Content, Post, TopicParam, V_Topic, ValidTopics, createNewPost, PostIDParam } from "../../models/post";
 import { HttpError } from "../../utils/utils";
 import { validationResult, matchedData } from "express-validator";
-import { checkAuth } from "../../utils/auth";
+import { checkAuth, getUser } from "../../utils/auth";
+import { User } from "../../models/user";
 
 export const PostRouter = express.Router();
 
 /* API for listing all avalible topics */
-PostRouter.get("/topics", async (req, res) => {
+PostRouter.get("/topics", checkAuth, async (req, res) => {
   console.log(`listing all avalible topics`);
 
   res.status(200).json({
@@ -78,14 +79,19 @@ PostRouter.post("/", checkAuth, V_Content(), V_Topic(), async (req, res, next) =
 
     const topicsFromRequest = matchedData(req).topics;
     const postContent = matchedData(req).content;
+    const user = getUser(req);
 
     const post = createNewPost({
       _id: new mongoose.Types.ObjectId(),
-      ownerId: new mongoose.Types.ObjectId("65663a1a771a7db15b32e2a6"),
-      userName: "test user name",
+      parentId: null,
+      ownerId: new mongoose.Types.ObjectId(user.id),
+      userName: user.username,
       content: postContent,
       created: new Date(),
       topics: topicsFromRequest,
+      childIds: [],
+      likes: 0,
+      dislikes: 0,
     });
 
     const savedPost = await post.save();
@@ -96,7 +102,8 @@ PostRouter.post("/", checkAuth, V_Content(), V_Topic(), async (req, res, next) =
   }
 });
 
-PostRouter.post("/:postID", PostIDParam(), V_Content(), async (req, res, next) => {
+PostRouter.post("/:postID", checkAuth, PostIDParam(), V_Content(), async (req, res, next) => {
+  const session = await mongoose.startSession();
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
@@ -105,6 +112,7 @@ PostRouter.post("/:postID", PostIDParam(), V_Content(), async (req, res, next) =
 
     const parentPostId = matchedData(req).postID;
     const postContent = matchedData(req).content;
+    const user = getUser(req);
 
     // Check if the parent post exists
     const parentPost = await Post.findById(parentPostId);
@@ -121,24 +129,35 @@ PostRouter.post("/:postID", PostIDParam(), V_Content(), async (req, res, next) =
     // If the parent post exists, create the comment
     const comment = createNewPost({
       _id: new mongoose.Types.ObjectId(),
-      ownerId: new mongoose.Types.ObjectId("65663a1a771a7db15b32e2a6"), // Replace with actual owner ID from auth
-      userName: "commenter user name", // Replace with actual username from auth
+      ownerId: new mongoose.Types.ObjectId(user.id),
+      userName: user.username,
       parentId: new mongoose.Types.ObjectId(parentPostId),
       content: postContent,
       created: new Date(),
       topics: parentPost.topics, // Inherit topics from parent post
+      childIds: [],
+      likes: 0,
+      dislikes: 0,
     });
 
-    const savedComment = await comment.save();
-    return res.status(201).json(savedComment);
+    parentPost.childIds.push(comment._id);
+    session.startTransaction();
+    await Promise.all([comment.save(), parentPost.save()]);
+    session.commitTransaction();
+    session.endSession();
+
+    return res.status(201).json(comment);
   } catch (error) {
-    // Handle errors from any of the await statements
+    await session.abortTransaction();
+    session.endSession();
     const httpError = new HttpError(500, (error as Error).message);
     next(httpError);
   }
 });
 
-PostRouter.post("/:postID/like", PostIDParam(), async (req, res, next) => {
+PostRouter.post("/:postID/like", checkAuth, PostIDParam(), async (req, res, next) => {
+  const session = await mongoose.startSession();
+
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
@@ -146,6 +165,7 @@ PostRouter.post("/:postID/like", PostIDParam(), async (req, res, next) => {
     }
 
     const postID = matchedData(req).postID;
+    const userInfo = getUser(req);
 
     const post = await Post.findById(postID);
     if (!post) {
@@ -156,19 +176,47 @@ PostRouter.post("/:postID/like", PostIDParam(), async (req, res, next) => {
       return next(new HttpError(400, "The post is no longer active, you cannot interact with it"));
     }
 
-    // Increment the likes
-    post.likes = (post.likes || 0) + 1;
+    // Fetch the user
+    const user = await User.findById(userInfo.id);
+    if (!user) {
+      return next(new HttpError(400, "User not found"));
+    }
 
-    // Save the updated post
-    const updatedPost = await post.save();
+    // Check if the user has already liked this post
+    const hasLiked = user.likedComments.includes(postID);
+    const hasDisLiked = user.diLikedComments.includes(postID);
 
-    res.status(200).json(updatedPost);
+    if (hasLiked) {
+      // User has already liked the post, so decrement like and remove from liked comments
+      post.likes = Math.max(0, post.likes - 1); // Ensure likes don't go negative
+      user.likedComments = user.likedComments.filter((commentID) => commentID.toString() !== postID);
+    } else if (hasDisLiked) {
+      // User has already disliked the post, so decrement dislikes and remove from disliked comments
+      post.dislikes = Math.max(0, post.dislikes - 1); // Ensure dislikes don't go negative
+      user.diLikedComments = user.diLikedComments.filter((commentID) => commentID.toString() !== postID);
+    } else {
+      // User has not liked the post, so increment like and add to liked comments
+      post.likes = (post.likes || 0) + 1;
+      user.likedComments.push(postID);
+    }
+
+    // Save both the updated post and user
+    session.startTransaction();
+    await Promise.all([post.save(), user.save()]);
+    session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json(post);
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(new HttpError(500, (error as Error).message));
   }
 });
 
-PostRouter.post("/:postID/dislike", PostIDParam(), async (req, res, next) => {
+PostRouter.post("/:postID/dislike", checkAuth, PostIDParam(), async (req, res, next) => {
+  const session = await mongoose.startSession();
+
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
@@ -176,6 +224,7 @@ PostRouter.post("/:postID/dislike", PostIDParam(), async (req, res, next) => {
     }
 
     const postID = matchedData(req).postID;
+    const userInfo = getUser(req);
 
     const post = await Post.findById(postID);
     if (!post) {
@@ -186,14 +235,40 @@ PostRouter.post("/:postID/dislike", PostIDParam(), async (req, res, next) => {
       return next(new HttpError(400, "The post is no longer active, you cannot interact with it"));
     }
 
-    // Increment the dislikes
-    post.dislikes = (post.dislikes || 0) + 1;
+    // Fetch the user
+    const user = await User.findById(userInfo.id);
+    if (!user) {
+      return next(new HttpError(400, "User not found"));
+    }
 
-    // Save the updated post
-    const updatedPost = await post.save();
+    // Check if the user has already disliked this post
+    const hasLiked = user.likedComments.includes(postID);
+    const hasDisLiked = user.diLikedComments.includes(postID);
 
-    res.status(200).json(updatedPost);
+    if (hasDisLiked) {
+      // User has already disliked the post, so decrement dislike and remove from disliked comments
+      post.dislikes = Math.max(0, post.dislikes - 1); // Ensure likes don't go negative
+      user.diLikedComments = user.diLikedComments.filter((commentID) => commentID.toString() !== postID);
+    } else if (hasLiked) {
+      // User has already liked the post, so decrement like and remove from liked comments
+      post.likes = Math.max(0, post.likes - 1); // Ensure likes don't go negative
+      user.likedComments = user.likedComments.filter((commentID) => commentID.toString() !== postID);
+    } else {
+      // User has not liked the post, so increment dislike and add to liked comments
+      post.dislikes = (post.dislikes || 0) + 1;
+      user.diLikedComments.push(postID);
+    }
+
+    // Save both the updated post and user
+    session.startTransaction();
+    await Promise.all([post.save(), user.save()]);
+    session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json(post);
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(new HttpError(500, (error as Error).message));
   }
 });

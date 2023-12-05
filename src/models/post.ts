@@ -19,16 +19,16 @@ interface IPOST {
   userName: string;
 
   // parent ID is empty if the post is root post
-  parentId?: mongoose.Types.ObjectId;
+  parentId: mongoose.Types.ObjectId | null;
   // list of child posts, ie comments
-  childIds?: mongoose.Types.ObjectId[];
+  childIds: mongoose.Types.ObjectId[];
 
   // actual content of the post
   content: string;
 
   // interactions with the post
-  likes?: number;
-  dislikes?: number;
+  likes: number;
+  dislikes: number;
 
   // Whether interaction is allowed on the post will be calculated on the fly
   created: Date;
@@ -73,6 +73,9 @@ PostSchema.set("toJSON", {
     // Remove parentId if it is null
     if (!returnedObject.parentId) {
       delete returnedObject.parentId;
+      returnedObject.post_type = "Post";
+    } else {
+      returnedObject.post_type = "comment";
     }
 
     // Convert childIds array to a count of comments

@@ -30,8 +30,18 @@
 
    The `dist` folder contains the transpiled javascript that is run by node.
 
+### Running the app locally. 
+
 ## Phase B
 ### user Authentication
+
+```
+POST ${host}/user/signup -> user posts email, username and password to register themseleves on the app
+POST ${host}/user/login -> user posts email and password to authenticate themselves and recive a JWT token
+
+GET ${host}/user -> User can see their own public details
+GET ${host}/user/${userID} -> User can see the public  details of other users
+```
 
 
 ## Phase C
