@@ -36,16 +36,21 @@ export function newUser(userInfo: IUser) {
   return new User(userInfo);
 }
 
-export const JSON = () => body().isJSON();
+export const V_email = () => body("email").exists().isEmail().withMessage("Invalid Email");
 
-export const email = () =>
-  body("email").exists().withMessage("You need to supply an email").isEmail().withMessage("Invalid Email");
+export const passwordExists = () => body("password").exists().withMessage("You need to supply a password");
 
-export const password = () =>
+export const V_password = () =>
   body("password")
     .exists()
     .withMessage("You need to supply a password")
     .isStrongPassword({ minLength: 8, minNumbers: 1, minUppercase: 1, minSymbols: 1 })
     .withMessage("Passwords need to be 8 charaters long with at least 1 of each: numbers, uppercase and symbols");
 
-export const username = () => body("userName").exists().withMessage("username needs to be supplied");
+export const V_username = () => body("userName").exists().withMessage("username needs to be supplied");
+
+export const userIDParam = () =>
+  param("userId")
+    .exists()
+    .custom((value) => mongoose.Types.ObjectId.isValid(value))
+    .withMessage("invalid PostID porvided");

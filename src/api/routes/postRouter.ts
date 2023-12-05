@@ -1,8 +1,9 @@
 import express from "express";
 import mongoose from "mongoose";
-import { Content, Post, TopicParam, Topic, ValidTopics, createNewPost, PostIDParam } from "../../models/post";
+import { V_Content, Post, TopicParam, V_Topic, ValidTopics, createNewPost, PostIDParam } from "../../models/post";
 import { HttpError } from "../../utils/utils";
 import { validationResult, matchedData } from "express-validator";
+import { checkAuth } from "../../utils/auth";
 
 export const PostRouter = express.Router();
 
@@ -16,7 +17,7 @@ PostRouter.get("/topics", async (req, res) => {
 });
 
 /* API for listing all posts that are not comments in a specific Topic */
-PostRouter.get("/topics/:topicID", TopicParam(), async (req, res, next) => {
+PostRouter.get("/topics/:topicID", checkAuth, TopicParam(), async (req, res, next) => {
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
@@ -35,7 +36,7 @@ PostRouter.get("/topics/:topicID", TopicParam(), async (req, res, next) => {
 });
 
 /* API for listing all posts without a topic filter that are not comments*/
-PostRouter.get("/", async (req, res, next) => {
+PostRouter.get("/", checkAuth, async (req, res, next) => {
   try {
     const posts = await Post.find({ parent_id: null }).sort({ Created: -1 });
     res.status(200).json(posts);
@@ -46,7 +47,7 @@ PostRouter.get("/", async (req, res, next) => {
 });
 
 /* Get a single Post and its comments */
-PostRouter.get("/:postID", PostIDParam(), async (req, res, next) => {
+PostRouter.get("/:postID", checkAuth, PostIDParam(), async (req, res, next) => {
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
@@ -68,7 +69,7 @@ PostRouter.get("/:postID", PostIDParam(), async (req, res, next) => {
   }
 });
 
-PostRouter.post("/", Content(), Topic(), async (req, res, next) => {
+PostRouter.post("/", checkAuth, V_Content(), V_Topic(), async (req, res, next) => {
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
@@ -95,7 +96,7 @@ PostRouter.post("/", Content(), Topic(), async (req, res, next) => {
   }
 });
 
-PostRouter.post("/:postID", PostIDParam(), Content(), async (req, res, next) => {
+PostRouter.post("/:postID", PostIDParam(), V_Content(), async (req, res, next) => {
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {

@@ -1,13 +1,19 @@
-import express from "express";
-import mongoose from "mongoose";
-import { HttpError } from "../../utils/utils";
-import { validationResult, matchedData } from "express-validator";
-import { User, email, newUser, password, username } from "../../models/user";
 import bcrypt from "bcrypt";
+import express from "express";
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+
+import { matchedData, validationResult } from "express-validator";
+
+import { User, V_email, V_password, V_username, newUser, passwordExists, userIDParam } from "../../models/user";
+import { JWTSignKey } from "../../app";
+import { HttpError } from "../../utils/utils";
+import { checkAuth, getUser } from "../../utils/auth";
 
 export const userRouter = express.Router();
 
-userRouter.post("/signup", email(), password(), username(), async (req, res, next) => {
+/* Enpoint for creating a new user */
+userRouter.post("/signup", V_email(), V_password(), V_username(), async (req, res, next) => {
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
@@ -48,6 +54,79 @@ userRouter.post("/signup", email(), password(), username(), async (req, res, nex
   }
 });
 
-userRouter.post("/login", (req, res, next) => {});
+/* Enpoint for logging in as a user */
+userRouter.post("/login", V_email(), passwordExists(), async (req, res, next) => {
+  try {
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+      return res.status(400).json(result.array());
+    }
 
-userRouter.get("/:userID", (req, res, next) => {});
+    const email = matchedData(req).email;
+    const password = matchedData(req).password;
+
+    // check if the user exists
+    const existingUser = await User.findOne({ email: email });
+    if (!existingUser) {
+      return next(new HttpError(401, "Auth Failed"));
+    }
+
+    // If the user exists check if the password has matches
+    if (!bcrypt.compareSync(password, existingUser.passwordHash)) {
+      return next(new HttpError(401, "Auth Failed"));
+    }
+
+    // if the password matches return a jwt token
+    const token = jwt.sign(
+      {
+        email: existingUser.email,
+        username: existingUser.userName,
+        id: existingUser._id,
+      } ,
+      JWTSignKey,
+      { expiresIn: "1 hour" }
+    );
+
+    return res.status(200).json({ message: "auth succeeded", token: token });
+  } catch (error) {
+    return next(new HttpError(500, (error as Error).message));
+  }
+});
+
+/* Enpoint for viewing user info and thier comments */
+userRouter.get("/:userID", userIDParam(), checkAuth, async (req, res, next) => {
+
+  try {
+
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+      return res.status(400).json(result.array());
+    }
+
+    const userId = matchedData(req).userId;
+
+    const user = await User.findById(userId)
+
+    if (!user){
+      return next(new HttpError(404, "user not found"))
+    }
+
+    return res.status(200).json(user)
+  } catch (error) {
+    next(new HttpError(500, (error as Error).message))
+  }
+
+});
+
+
+/* Enpoint for viewing own user info */
+userRouter.get("/", checkAuth, async(req, res, next) => {
+  const tokenInfo = getUser(req)
+  try {
+    const user = await User.findById(tokenInfo.id)
+    return res.status(200).json(user)
+  } catch (error) {
+    next(new HttpError(500, (error as Error).message))
+  }
+
+});

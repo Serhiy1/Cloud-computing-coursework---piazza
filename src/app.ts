@@ -8,6 +8,7 @@ import { PostRouter } from "./api/routes/postRouter";
 import { userRouter } from "./api/routes/userRouter";
 
 const connectionString = GetEnvValue("MongoConnectionString");
+export const JWTSignKey = GetEnvValue("JWTKey");
 
 mongoose.connect(connectionString);
 

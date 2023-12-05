@@ -13,7 +13,7 @@ export function GetEnvValue(name: string): string {
   return (
     process.env[name] ||
     (() => {
-      throw new Error(`${name} enviromemtn variables is not set`);
+      throw new Error(`${name} environment variables is not set`);
     })()
   );
 }

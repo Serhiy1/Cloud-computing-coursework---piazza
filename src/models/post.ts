@@ -105,14 +105,14 @@ export const PostIDParam = () =>
     .withMessage("invalid PostID porvided");
 
 /* validator for making sure the content of posts works */
-export const Content = () =>
+export const V_Content = () =>
   body("content")
     .isString()
     .isLength({ min: 1, max: 512 })
     .withMessage("content should be text between 1 and 512 charaters");
 
 /* validator for making sure users input the correct topic */
-export const Topic = () =>
+export const V_Topic = () =>
   body("topics")
     .isArray({ min: 1 })
     .withMessage("Topics array must have at least one topic")
