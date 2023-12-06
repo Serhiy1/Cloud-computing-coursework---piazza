@@ -24,11 +24,17 @@
    5. jsonwebtoken - For creating the JSON web tokens for oauth
 
 5. Project structure - The folder structure of the project follows industry standards, all code is located in the `src` folder. The Main entry points are in the root of this folder.
-   - `./api/routes` subfolder contains specific handlers for the different API endpoints
-   - `./models` subfolder contains the types for database / API interaction
-   - `./utils` contains utility code and classes
+    - `./app/api/routes` subfolder contains specific handlers for the different API endpoints
+    - `./app/models` subfolder contains the types for database / API interaction
+    - `./app/utils` contains utility code and classes
+    - `./testing` Contains all the test code
 
-   The `dist` folder contains the transpiled javascript that is run by node.
+    The `dist` folder contains the transpiled javascript that is run by node.
+
+6. Selecting the test setup
+    - Adhoc testing during the development is done with the postman clone thunder client
+    - The `jest`, `supertest`, `cross-env` packages are used for the structured testing. These where selected as recommendations from the following [guide](https://www.freecodecamp.org/news/how-to-test-in-express-and-mongoose-apps/).
+    - The guide was modified with the use of `mongodb-memory-server`
 
 ### Running the app locally.
 
@@ -115,9 +121,9 @@ When A user is successfully found the returned format is
 #### API for creating and viewing posts
 
 **Global Rules**
-- User cannot like, dislike or comment on post that is marked as inactive
-- All Posts go inactive after an hour
-   - When attempting to interact with an inactive comment as 400 response is returned
+- User cannot like, dislike or comment on post that is marked as expired
+- All Posts go expired depending on the `expiredTimeHours` environment variable
+   - When attempting to interact with an expired comment as 400 response is returned
 
 - All API endpoints on /post require a jwt token from the /login endpoint
    - When attempting to interact without a token a 403 response is returned
@@ -130,26 +136,29 @@ When A user is successfully found the returned format is
 - When a person likes/dislikes a post a second time it un-does the first action
 - When a person creates a Post the parent field is hidden
 - When a person comments on a Post the parentId field is present
-   - The comment count of the parent should also increase
+  - The comment count of the parent should also increase
 
-**POST JSON Response**
+- When Listing posts on a topic or globally, the comments are compressed into a count. To view individual comments you need to specifically `GET` a post
+
+**post JSON Response**
 ```
 {
-   "userName": "${username}",
-   "content": "this post is about some tech",
-   "likes": 0,
-   "dislikes": 0,
-   "created": "2023-12-05T15:06:58.468Z",
-   "topics": ["Tech"],
-   "link": "${host}/posts/${mongo ID}",
-   "user_link": "${host}/users/${mongo ID}",
-   "post_type": "Post",  # or Comment
-   "comments": 1,
-   "status": "Active" # or "inactive"
-   "Expires_in" : "1 hour"
+  "title" : "${title}"
+  "userName": "${username}",
+  "content": "this post is about some tech",
+  "likes": 0,
+  "dislikes": 0,
+  "created": "2023-12-05T15:06:58.468Z",
+  "topics": ["Tech"],
+  "link": "${host}/posts/${mongo ID}",
+  "user_link": "${host}/users/${mongo ID}",
+  "post_type": "Post",  # or Comment
+  "comments": 1,
+  "status": "Active" # or "inactive"
+  "Expires_in" : "1 hour"
 }
 ```
-**When Creating a Post the user needs to post**
+**When creating a post the user needs to post**
 ```
 {
   "title" : "${title}"
@@ -159,16 +168,23 @@ When A user is successfully found the returned format is
 
 ```
 
+**When a user wants to comment on a post**
+```
+{
+  "content" : "${content}",
+}
+
+```
+
 **API Paths**
 ```
 GET ${host}/posts/topics -> return a list of valid topics
-GET ${host}/posts/topics/${topicID} -> return a list of all the active posts that are not comments matching that topic
-GET ${host}/posts/topics/${topicID}/expired -> return a list of all the inactive posts that are not comments matching that topic
+GET ${host}/posts/topics/${topicID} -> return a list of all the live posts that are not comments matching that topic
+GET ${host}/posts/topics/${topicID}/expired -> return a list of all the expired posts that are not comments matching that topic
 
 
-
-GET ${host}/posts -> return a list of all the active posts that are not comments without any topic filter
-GET ${host}/posts -> return a list of all the inactive posts that are not comments without any topic filter
+GET ${host}/posts -> return a list of all the live posts that are not comments without any topic filter
+GET ${host}/posts -> return a list of all the expired posts that are not comments without any topic filter
 GET ${host}/posts/${postID} -> view a single post and a list of all the comments on it
 
 POST ${host}/posts -> When the user wants to create a new post

@@ -7,11 +7,12 @@ import { PostRouter } from "./api/routes/postRouter";
 import { userRouter } from "./api/routes/userRouter";
 import { GetEnvValue, HttpError } from "./utils/utils";
 
-const connectionString = GetEnvValue("MongoConnectionString");
 export const JWTSignKey = GetEnvValue("JWTKey");
 export const expiryTimeHours = Number(GetEnvValue("ExpiryTimeHours"));
 
-mongoose.connect(connectionString);
+export const connectToDatabase = (connectionString: string) => {
+  mongoose.connect(connectionString);
+};
 
 export const app = express();
 // enable global logging on the project

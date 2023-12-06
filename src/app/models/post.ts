@@ -94,6 +94,11 @@ PostSchema.set("toJSON", {
       returnedObject.post_type = "comment";
     }
 
+    // Remove title if it is null
+    if (!returnedObject.title) {
+      delete returnedObject.title;
+    }
+
     // Convert childIds array to a count of comments
     if (returnedObject.childIds && Array.isArray(returnedObject.childIds)) {
       returnedObject.comments = returnedObject.childIds.length;
