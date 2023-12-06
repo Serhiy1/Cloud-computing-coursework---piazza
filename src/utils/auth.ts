@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+
 import { JWTSignKey } from "../app";
 import { HttpError } from "./utils";
 
@@ -14,10 +15,10 @@ export const checkAuth = (req: Request, res: Response, next: NextFunction) => {
     return next(new HttpError(403, "token is missing"));
   }
 
-  const [prefix, token] = req.headers.authorization.split(" ");
+  const token = req.headers.authorization.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, JWTSignKey, { complete: true });
+    jwt.verify(token, JWTSignKey, { complete: true });
   } catch (error) {
     next(new HttpError(403, (error as Error).message));
   } finally {
@@ -27,6 +28,6 @@ export const checkAuth = (req: Request, res: Response, next: NextFunction) => {
 
 export function getUser(req: Request): tokenInfo {
   // the check auth middleware should have already verified that the token is valid
-  const [prefix, token] = (req.headers.authorization as string).split(" ");
+  const token = (req.headers.authorization as string).split(" ")[1];
   return jwt.decode(token) as tokenInfo;
 }

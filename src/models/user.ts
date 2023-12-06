@@ -1,5 +1,6 @@
-import mongoose, { Schema, model, ObjectId } from "mongoose";
 import { body, param } from "express-validator";
+import mongoose, { model, ObjectId,Schema } from "mongoose";
+
 import { Post } from "./post";
 
 // 1. Create an interface representing a document in MongoDB.

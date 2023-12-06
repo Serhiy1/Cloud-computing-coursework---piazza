@@ -1,10 +1,11 @@
 import express from "express";
+import { matchedData,validationResult } from "express-validator";
 import mongoose from "mongoose";
-import { V_Content, Post, TopicParam, V_Topic, ValidTopics, createNewPost, PostIDParam } from "../../models/post";
-import { HttpError } from "../../utils/utils";
-import { validationResult, matchedData } from "express-validator";
-import { checkAuth, getUser } from "../../utils/auth";
+
+import { createNewPost, Post, PostIDParam,TopicParam, V_Content, V_title, V_Topic, ValidTopics } from "../../models/post";
 import { User } from "../../models/user";
+import { checkAuth, getUser } from "../../utils/auth";
+import { GetExpiryDate, HttpError } from "../../utils/utils";
 
 export const PostRouter = express.Router();
 
@@ -17,7 +18,7 @@ PostRouter.get("/topics", checkAuth, async (req, res) => {
   });
 });
 
-/* API for listing all posts that are not comments in a specific Topic */
+/* API for listing all posts that are not comments and are not expired in a specific Topic */
 PostRouter.get("/topics/:topicID", checkAuth, TopicParam(), async (req, res, next) => {
   try {
     const result = validationResult(req);
@@ -26,9 +27,11 @@ PostRouter.get("/topics/:topicID", checkAuth, TopicParam(), async (req, res, nex
     }
 
     const topicID = matchedData(req).topicID;
+    const expiryTime = GetExpiryDate();
 
-    console.log(`listing all posts for topic ${topicID}`);
-    const posts = await Post.find({ topics: topicID, parent_id: null }).sort({ Created: -1 });
+    const posts = await Post.find({ topics: topicID, parent_id: null, created: { $gte: expiryTime } }).sort({
+      Created: -1,
+    });
     res.status(200).json(posts);
   } catch (error) {
     const httpError = new HttpError(500, (error as Error).message);
@@ -36,10 +39,44 @@ PostRouter.get("/topics/:topicID", checkAuth, TopicParam(), async (req, res, nex
   }
 });
 
-/* API for listing all posts without a topic filter that are not comments*/
+/* API for listing all posts that are not comments and are expired in a specific Topic */
+PostRouter.get("/topics/:topicID/expired", checkAuth, TopicParam(), async (req, res, next) => {
+  try {
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+      return next(new HttpError(400, result.array()));
+    }
+
+    const topicID = matchedData(req).topicID;
+    const expiryTime = GetExpiryDate();
+
+    const posts = await Post.find({ topics: topicID, parent_id: null, created: { $lte: expiryTime } }).sort({
+      Created: -1,
+    });
+    res.status(200).json(posts);
+  } catch (error) {
+    const httpError = new HttpError(500, (error as Error).message);
+    next(httpError);
+  }
+});
+
+/* API for listing all posts without a topic filter, are not expired and that are not comments*/
 PostRouter.get("/", checkAuth, async (req, res, next) => {
   try {
-    const posts = await Post.find({ parent_id: null }).sort({ Created: -1 });
+    const expiryTime = GetExpiryDate();
+    const posts = await Post.find({ parent_id: null, created: { $gte: expiryTime } }).sort({ Created: -1 });
+    res.status(200).json(posts);
+  } catch (error) {
+    const httpError = new HttpError(500, (error as Error).message);
+    next(httpError);
+  }
+});
+
+/* API for listing all posts without a topic filter, are expired and that are not comments*/
+PostRouter.get("/", checkAuth, async (req, res, next) => {
+  try {
+    const expiryTime = GetExpiryDate();
+    const posts = await Post.find({ parent_id: null, created: { $lte: expiryTime } }).sort({ Created: -1 });
     res.status(200).json(posts);
   } catch (error) {
     const httpError = new HttpError(500, (error as Error).message);
@@ -70,7 +107,7 @@ PostRouter.get("/:postID", checkAuth, PostIDParam(), async (req, res, next) => {
   }
 });
 
-PostRouter.post("/", checkAuth, V_Content(), V_Topic(), async (req, res, next) => {
+PostRouter.post("/", checkAuth, V_title(), V_Content(), V_Topic(), async (req, res, next) => {
   try {
     const result = validationResult(req);
     if (!result.isEmpty()) {
@@ -79,10 +116,12 @@ PostRouter.post("/", checkAuth, V_Content(), V_Topic(), async (req, res, next) =
 
     const topicsFromRequest = matchedData(req).topics;
     const postContent = matchedData(req).content;
+    const title = matchedData(req).title;
     const user = getUser(req);
 
     const post = createNewPost({
       _id: new mongoose.Types.ObjectId(),
+      title: title,
       parentId: null,
       ownerId: new mongoose.Types.ObjectId(user.id),
       userName: user.username,
@@ -121,7 +160,7 @@ PostRouter.post("/:postID", checkAuth, PostIDParam(), V_Content(), async (req, r
     }
 
     // Check if the post is active
-    // @ts-ignore
+    // @ts-expect-error This is is set through the mongoose `Method` accessor which is not type compatible
     if (!parentPost.isActive()) {
       return next(new HttpError(400, "The post is no longer active, you cannot interact with it"));
     }
@@ -129,6 +168,7 @@ PostRouter.post("/:postID", checkAuth, PostIDParam(), V_Content(), async (req, r
     // If the parent post exists, create the comment
     const comment = createNewPost({
       _id: new mongoose.Types.ObjectId(),
+      title: null,
       ownerId: new mongoose.Types.ObjectId(user.id),
       userName: user.username,
       parentId: new mongoose.Types.ObjectId(parentPostId),
@@ -171,7 +211,7 @@ PostRouter.post("/:postID/like", checkAuth, PostIDParam(), async (req, res, next
     if (!post) {
       return next(new HttpError(400, "The post does not exist"));
     }
-    // @ts-ignore
+    // @ts-expect-error, This is is set through the mongoose `Method` accessor which is not type compatible
     if (!post.isActive()) {
       return next(new HttpError(400, "The post is no longer active, you cannot interact with it"));
     }
@@ -230,7 +270,7 @@ PostRouter.post("/:postID/dislike", checkAuth, PostIDParam(), async (req, res, n
     if (!post) {
       return next(new HttpError(400, "The post does not exist"));
     }
-    // @ts-ignore
+    // @ts-expect-error, This is is set through the mongoose `Method` accessor which is not type compatible
     if (!post.isActive()) {
       return next(new HttpError(400, "The post is no longer active, you cannot interact with it"));
     }

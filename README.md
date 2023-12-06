@@ -21,7 +21,7 @@
    2. Mongoose - For interacting with the mongo data base
    3. express-validator - validating user input
    4. bycrypt - hashing passwords so they are not stored as plain text
-   5. jsonwebtoken - For creating the JSON web tokens
+   5. jsonwebtoken - For creating the JSON web tokens for oauth
 
 5. Project structure - The folder structure of the project follows industry standards, all code is located in the `src` folder. The Main entry points are in the root of this folder.
    - `./api/routes` subfolder contains specific handlers for the different API endpoints
@@ -32,6 +32,13 @@
 
 ### Running the app locally.
 
+1. Open the project in VS code
+2. Copy `.env-empty-copy` and rename it to `.env`. Add all the secure details for th deployment
+3. Install the remote development extension for VS code
+4. Re-open the project inside the development container - This should start the docker image and attach VS code to it.
+5. run `npm run dev` to start the dev server
+
+
 ## Phase B
 ### user Authentication
 
@@ -41,7 +48,7 @@ POST ${host}/user/signup -> user posts email, username and password to register 
 POST ${host}/user/login -> user posts email and password to authenticate themselves and receive a JWT token
 
 GET ${host}/user -> User can see their own public details
-GET ${host}/user/${userID} -> User can see the public  details of other users
+GET ${host}/user/${userID} -> User can see the public details of other users
 
 ```
 
@@ -139,13 +146,15 @@ When A user is successfully found the returned format is
    "post_type": "Post",  # or Comment
    "comments": 1,
    "status": "Active" # or "inactive"
+   "Expires_in" : "1 hour"
 }
 ```
 **When Creating a Post the user needs to post**
 ```
 {
-  "Topics" : [${valid topic}]
-  "content" : "${content}"
+  "title" : "${title}"
+  "content" : "${content}",
+  "topics" : [${valid topic}]
 }
 
 ```
@@ -153,9 +162,13 @@ When A user is successfully found the returned format is
 **API Paths**
 ```
 GET ${host}/posts/topics -> return a list of valid topics
-GET ${host}/posts/topics/${topicID} -> return a list of all the posts that are not comments matching that topic
+GET ${host}/posts/topics/${topicID} -> return a list of all the active posts that are not comments matching that topic
+GET ${host}/posts/topics/${topicID}/expired -> return a list of all the inactive posts that are not comments matching that topic
 
-GET ${host}/posts -> return a list of all the posts that are not comments without any topic filter
+
+
+GET ${host}/posts -> return a list of all the active posts that are not comments without any topic filter
+GET ${host}/posts -> return a list of all the inactive posts that are not comments without any topic filter
 GET ${host}/posts/${postID} -> view a single post and a list of all the comments on it
 
 POST ${host}/posts -> When the user wants to create a new post

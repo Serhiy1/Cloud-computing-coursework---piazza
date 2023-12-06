@@ -3,12 +3,13 @@ import express from "express";
 import mongoose from "mongoose";
 import morgan from "morgan";
 
-import { GetEnvValue, HttpError } from "./utils/utils";
 import { PostRouter } from "./api/routes/postRouter";
 import { userRouter } from "./api/routes/userRouter";
+import { GetEnvValue, HttpError } from "./utils/utils";
 
 const connectionString = GetEnvValue("MongoConnectionString");
 export const JWTSignKey = GetEnvValue("JWTKey");
+export const expiryTimeHours = Number(GetEnvValue("ExpiryTimeHours"));
 
 mongoose.connect(connectionString);
 
@@ -46,9 +47,7 @@ app.use((req, res, next) => {
 const errorHandler: ErrorRequestHandler = (err: HttpError, req, res, next) => {
   res.statusCode = err.statuscode;
   res.json({
-    error: {
-      message: err.message,
-    },
+    error_message: err.message
   });
 };
 app.use(errorHandler);

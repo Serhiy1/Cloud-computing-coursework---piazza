@@ -1,15 +1,14 @@
 import bcrypt from "bcrypt";
 import express from "express";
+import { matchedData, validationResult } from "express-validator";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
-import { matchedData, validationResult } from "express-validator";
-
-import { User, V_email, V_password, V_username, newUser, passwordExists, userIDParam } from "../../models/user";
 import { JWTSignKey } from "../../app";
-import { HttpError } from "../../utils/utils";
-import { checkAuth, getUser } from "../../utils/auth";
 import { Post } from "../../models/post";
+import { newUser, passwordExists, User, userIDParam,V_email, V_password, V_username } from "../../models/user";
+import { checkAuth, getUser } from "../../utils/auth";
+import { HttpError } from "../../utils/utils";
 
 export const userRouter = express.Router();
 
@@ -112,10 +111,10 @@ userRouter.get("/:userID", userIDParam(), checkAuth, async (req, res, next) => {
       return next(new HttpError(404, "user not found"));
     }
 
-    const posts: (typeof Post)[] = await Post.find({ ownerId: user._id, parentId: null});
+    const posts: (typeof Post)[] = await Post.find({ ownerId: user._id, parentId: null });
     const comments = await Post.find({ ownerId: user._id, parentId: { $ne: null } });
 
-    return res.status(200).json({ user: user, "posts": posts, comments: comments });
+    return res.status(200).json({ user: user, posts: posts, comments: comments });
   } catch (error) {
     next(new HttpError(500, (error as Error).message));
   }
@@ -131,10 +130,10 @@ userRouter.get("/", checkAuth, async (req, res, next) => {
       return next(new HttpError(404, "user not found"));
     }
 
-    const posts: (typeof Post)[] = await Post.find({ ownerId: user._id, parentId: null});
+    const posts: (typeof Post)[] = await Post.find({ ownerId: user._id, parentId: null });
     const comments = await Post.find({ ownerId: user._id, parentId: { $ne: null } });
 
-    return res.status(200).json({ user: user, "posts": posts, comments: comments });
+    return res.status(200).json({ user: user, posts: posts, comments: comments });
   } catch (error) {
     next(new HttpError(500, (error as Error).message));
   }

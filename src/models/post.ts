@@ -1,6 +1,8 @@
-import mongoose from "mongoose";
-import { Schema, model } from "mongoose";
 import { body, param } from "express-validator";
+import mongoose from "mongoose";
+import { model,Schema } from "mongoose";
+
+import { GetExpiryDate } from "../utils/utils";
 
 export enum ValidTopics {
   Politics = "Politics",
@@ -14,6 +16,9 @@ interface IPOST {
   _id: mongoose.Types.ObjectId;
   // Link to the owner account
   ownerId: mongoose.Types.ObjectId;
+
+  // Title of the post, not required if commenting
+  title: string | null
 
   // Prevent multiple database calls, keep username on record.
   userName: string;
@@ -40,6 +45,7 @@ interface IPOST {
 // 2. Create a Schema corresponding to the document interface.
 const PostSchema = new Schema<IPOST>({
   _id: { type: Schema.Types.ObjectId, required: true },
+  title: { type: String, required: false, default: null },
   ownerId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
   userName: { type: String, required: true },
   parentId: { type: Schema.Types.ObjectId, required: false, default: null, ref: "Post" },
@@ -51,13 +57,23 @@ const PostSchema = new Schema<IPOST>({
   topics: { type: [String], enum: Object.values(ValidTopics), required: true },
 });
 
+PostSchema.methods.timeLeftActive = function () {
+  const expiryTime = GetExpiryDate();
+  const createdDate: Date = this.created;
+  const timeLeft = Math.max(createdDate.getTime() - expiryTime.getTime(), 0) / 36e5;
+
+  if (timeLeft > 1) {
+    return `${Math.floor(timeLeft)} hours left`;
+  } else {
+    return `${Math.floor(timeLeft * 60)} minutes left`;
+  }
+};
+
 /* Method on post to calculate on the fly if its active*/
 PostSchema.methods.isActive = function () {
-  const now = new Date();
+  const expiryTime = GetExpiryDate();
   const createdDate: Date = this.created;
-  const diffTime = Math.abs(now.valueOf() - createdDate.valueOf());
-  const diffHours = diffTime / (1000 * 60 * 60); // convert milliseconds to hours
-  return diffHours < 24;
+  return expiryTime < createdDate;
 };
 
 // 3. Add a toJson Method, This gets called implicitly
@@ -86,8 +102,10 @@ PostSchema.set("toJSON", {
       returnedObject.comments = 0;
     }
 
-    // @ts-ignore
-    returnedObject.status = document.isActive() ? "Active" : "Inactive";
+    // @ts-expect-error, This is is set through the mongoose `Method` accessor which is not type compatible
+    returnedObject.status = document.isActive() ? "Live" : "Expired";
+    // @ts-expect-error, This is is set through the mongoose `Method` accessor which is not type compatible
+    returnedObject.expires_in = document.timeLeftActive();
   },
 });
 
@@ -107,12 +125,20 @@ export const PostIDParam = () =>
     .custom((value) => mongoose.Types.ObjectId.isValid(value))
     .withMessage("invalid PostID porvided");
 
+/* validator for making sure the payload contains a title */
+export const V_title = () =>
+  body("title")
+    .isString()
+    .isLength({ min: 1, max: 64 })
+    .withMessage("the title should be text between 1 and 64 characters");
+
+
 /* validator for making sure the content of posts works */
 export const V_Content = () =>
   body("content")
     .isString()
     .isLength({ min: 1, max: 512 })
-    .withMessage("content should be text between 1 and 512 charaters");
+    .withMessage("content should be text between 1 and 512 characters");
 
 /* validator for making sure users input the correct topic */
 export const V_Topic = () =>
