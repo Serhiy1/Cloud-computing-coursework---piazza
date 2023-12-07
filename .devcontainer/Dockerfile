@@ -1,4 +1,4 @@
-FROM library/node:lts-bookworm
+FROM library/node:lts-bullseye 
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt update \

@@ -1,17 +1,26 @@
 import express from "express";
-import { matchedData,validationResult } from "express-validator";
+import { matchedData, validationResult } from "express-validator";
 import mongoose from "mongoose";
 
-import { createNewPost, Post, PostIDParam,TopicParam, V_Content, V_title, V_Topic, ValidTopics } from "../../models/post";
+import {
+  createNewPost,
+  Post,
+  PostIDParam,
+  TopicParam,
+  V_Content,
+  V_title,
+  V_Topic,
+  ValidTopics,
+} from "../../models/post";
 import { User } from "../../models/user";
 import { checkAuth, getUser } from "../../utils/auth";
 import { GetExpiryDate, HttpError } from "../../utils/utils";
 
 export const PostRouter = express.Router();
 
-/* API for listing all avalible topics */
+/* API for listing all available topics */
 PostRouter.get("/topics", checkAuth, async (req, res) => {
-  console.log(`listing all avalible topics`);
+  console.log(`listing all available topics`);
 
   res.status(200).json({
     topics: Object.keys(ValidTopics),
@@ -65,6 +74,18 @@ PostRouter.get("/", checkAuth, async (req, res, next) => {
   try {
     const expiryTime = GetExpiryDate();
     const posts = await Post.find({ parent_id: null, created: { $gte: expiryTime } }).sort({ Created: -1 });
+    res.status(200).json(posts);
+  } catch (error) {
+    const httpError = new HttpError(500, (error as Error).message);
+    next(httpError);
+  }
+});
+
+/* API for listing all posts without a topic filter, are expired and that are not comments*/
+PostRouter.get("/expired", checkAuth, async (req, res, next) => {
+  try {
+    const expiryTime = GetExpiryDate();
+    const posts = await Post.find({ parent_id: null, created: { $lte: expiryTime } }).sort({ Created: -1 });
     res.status(200).json(posts);
   } catch (error) {
     const httpError = new HttpError(500, (error as Error).message);
@@ -162,7 +183,7 @@ PostRouter.post("/:postID", checkAuth, PostIDParam(), V_Content(), async (req, r
     // Check if the post is active
     // @ts-expect-error This is is set through the mongoose `Method` accessor which is not type compatible
     if (!parentPost.isActive()) {
-      return next(new HttpError(400, "The post is no longer active, you cannot interact with it"));
+      return next(new HttpError(400, "The post is expired, you cannot interact with it"));
     }
 
     // If the parent post exists, create the comment
@@ -213,13 +234,17 @@ PostRouter.post("/:postID/like", checkAuth, PostIDParam(), async (req, res, next
     }
     // @ts-expect-error, This is is set through the mongoose `Method` accessor which is not type compatible
     if (!post.isActive()) {
-      return next(new HttpError(400, "The post is no longer active, you cannot interact with it"));
+      return next(new HttpError(400, "The post is expired, you cannot interact with it"));
     }
 
     // Fetch the user
     const user = await User.findById(userInfo.id);
     if (!user) {
       return next(new HttpError(400, "User not found"));
+    }
+
+    if (post.ownerId == user.id) {
+      return next(new HttpError(400, "you cannot like your own post"))
     }
 
     // Check if the user has already liked this post
@@ -272,7 +297,7 @@ PostRouter.post("/:postID/dislike", checkAuth, PostIDParam(), async (req, res, n
     }
     // @ts-expect-error, This is is set through the mongoose `Method` accessor which is not type compatible
     if (!post.isActive()) {
-      return next(new HttpError(400, "The post is no longer active, you cannot interact with it"));
+      return next(new HttpError(400, "The post is expired, you cannot interact with it"));
     }
 
     // Fetch the user
@@ -281,6 +306,10 @@ PostRouter.post("/:postID/dislike", checkAuth, PostIDParam(), async (req, res, n
       return next(new HttpError(400, "User not found"));
     }
 
+    if (post.ownerId == user.id) {
+      return next(new HttpError(400, "you cannot dislike your own post"))
+    }
+    
     // Check if the user has already disliked this post
     const hasLiked = user.likedComments.includes(postID);
     const hasDisLiked = user.diLikedComments.includes(postID);

@@ -4,10 +4,11 @@
 1. The development environment uses a VS code [development container](https://code.visualstudio.com/learn/develop-cloud/containers).
    - The development container is based of the default nodeJs Docker image
    - The image used for the dev container can be re-used for deploying the service to the cloud
-   - The dev container is set to install a set of default VS code pligins:
+   - The dev container is set to install a set of default VS code plugins:
       1. thunder-client, a postMan Clone that is present inside VS code
       2. Spell checker
       3. Mongo DB plugin for connecting and debugging the database
+      4. Jest - for running tests from the IDE
 
 2. Setting up typescript compilation and default packages
    - This guide was used for getting node, express and typescript to work with each other https://blog.logrocket.com/how-to-set-up-node-typescript-express/
@@ -30,11 +31,6 @@
     - `./testing` Contains all the test code
 
     The `dist` folder contains the transpiled javascript that is run by node.
-
-6. Selecting the test setup
-    - Adhoc testing during the development is done with the postman clone thunder client
-    - The `jest`, `supertest`, `cross-env` packages are used for the structured testing. These where selected as recommendations from the following [guide](https://www.freecodecamp.org/news/how-to-test-in-express-and-mongoose-apps/).
-    - The guide was modified with the use of `mongodb-memory-server`
 
 ### Running the app locally.
 
@@ -60,6 +56,7 @@ GET ${host}/user/${userID} -> User can see the public details of other users
 
 **When Signing up the following payload needs to be sent**
 ```
+POST user/signup
 {
   "email": "${email}",
   "password" : "${password}",
@@ -67,13 +64,20 @@ GET ${host}/user/${userID} -> User can see the public details of other users
 }
 ```
 
-A 200 response containing the Public view of the User is returned when signing up
-A 409 response is returned if an email or username is already in use
-A 400 response is returned if any of the fields are missing
-A 400 response is returned if the password complexity is not met: 8 char min, 1 capital, 1 number, 1 symbol
-
+- A 200 response containing the Public view of the User is returned when signing up
+- A 409 response is returned if an email or username is already in use
+- A 400 response is returned if any of the fields are missing
+- A 400 response is returned if the password complexity is not met: 8 char min, 1 capital, 1 number, 1 symbol
+---
+**file structure**
+- The file that implements the API routes in `src/app/api/routes/userRouter.ts`
+- The file that implements the mongo models is in `src/app/models/user.ts`
+- `src/app/utils/auth.ts` contains helper code
+---
 **When logging in the following payload needs to be sent**
 ```
+POST user/login
+
 {
   "email": "${email}",
   "password" : "${password}"
@@ -83,12 +87,14 @@ A 400 response is returns if any of the fields are missing
 A 403 response is returned when the username or password does not match
 A 200 response is returned when successfully logging in `{message: "auth succeeded", "token" : "${jwt token}"}`
 
-**when Viewing a user or yourself**
+**Viewing a user**
 
 A 400 response is returned when the user ID does not exist
 
 When A user is successfully found the returned format is
 ```
+GET user/${userId}
+
 {
   "user": {
     "userName": "${username}",
@@ -137,15 +143,21 @@ When A user is successfully found the returned format is
 - When a person creates a Post the parent field is hidden
 - When a person comments on a Post the parentId field is present
   - The comment count of the parent should also increase
+- A person cannot like or dislike their own post
 
 - When Listing posts on a topic or globally, the comments are compressed into a count. To view individual comments you need to specifically `GET` a post
 
-**post JSON Response**
+---
+**file structure**
+- The file that implements the API routes in `src/app/api/routes/postRouter.ts`
+- The file that implements the mongo models is in `src/app/models/post.ts`
+---
+**post JSON example Response**
 ```
 {
   "title" : "${title}"
   "userName": "${username}",
-  "content": "this post is about some tech",
+  "content": "${content}",
   "likes": 0,
   "dislikes": 0,
   "created": "2023-12-05T15:06:58.468Z",
@@ -160,20 +172,21 @@ When A user is successfully found the returned format is
 ```
 **When creating a post the user needs to post**
 ```
+POST /posts
+
 {
   "title" : "${title}"
   "content" : "${content}",
   "topics" : [${valid topic}]
 }
-
 ```
-
 **When a user wants to comment on a post**
 ```
+POST /posts/${postId}
+
 {
   "content" : "${content}",
 }
-
 ```
 
 **API Paths**
@@ -187,10 +200,39 @@ GET ${host}/posts -> return a list of all the live posts that are not comments w
 GET ${host}/posts -> return a list of all the expired posts that are not comments without any topic filter
 GET ${host}/posts/${postID} -> view a single post and a list of all the comments on it
 
-POST ${host}/posts -> When the user wants to create a new post
-POST ${host}/posts/${postID} -> When the user wants to comment on a post
+POST ${host}/posts -> Create a new post
+POST ${host}/posts/${postID} -> Comment on a post
 
-POST ${host}/posts/${postID}/like -> When a user likes a post
-POST ${host}/posts/${postID}/dislike -> When a user dislikes a post
-
+POST ${host}/posts/${postID}/like -> Like a post
+POST ${host}/posts/${postID}/dislike -> dislike a post
 ```
+
+## Phase D
+### Testing the application
+
+- Adhoc testing during the development is done with the postman clone thunder client.
+- The `jest`, `supertest`, `MongoMemoryServer` packages are used for the structured testing. These where selected as recommendations from the following [guide](https://www.freecodecamp.org/news/how-to-test-in-express-and-mongoose-apps/).
+- To run these tests you need to type into the terminal `npm run test`
+
+---
+**Reasons for the package selection**
+- `Jest` it integrates with the jest vs code plugin and allows breakpoint debugging.
+- `supertest` is a test framework specifically express app and integrates directly with it
+- `MongoMemoryServer` is used to to create temporary databases, preventing pollution from run to run
+---
+**Test Coverage**
+- `src/test/auth.test.ts` covers the sign up process
+- `src/test/expired.test.ts` covers the behaviour of expired posts
+- `src/test/post.test.ts` covers the behaviour of posting and commenting on the app
+- `src/test/e2e.test.ts` contains all the tests specified by the worksheet
+
+## Phase E
+### Deploying the application to GCP
+
+## TODO left
+
+1. Implement orderBy queries
+  - Default ordering is by time
+  - Order by likes, dislikes, activity (all three combined)
+2. Implement the tests stated out in the document
+

@@ -1,5 +1,5 @@
 import { body, param } from "express-validator";
-import mongoose, { model, ObjectId,Schema } from "mongoose";
+import mongoose, { model, ObjectId, Schema } from "mongoose";
 
 import { Post } from "./post";
 

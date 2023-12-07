@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { JWTSignKey } from "../app";
 import { HttpError } from "./utils";
 
-interface tokenInfo {
+export interface tokenInfo {
   email: string;
   username: string;
   id: string;

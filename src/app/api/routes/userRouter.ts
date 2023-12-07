@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 
 import { JWTSignKey } from "../../app";
 import { Post } from "../../models/post";
-import { newUser, passwordExists, User, userIDParam,V_email, V_password, V_username } from "../../models/user";
+import { newUser, passwordExists, User, userIDParam, V_email, V_password, V_username } from "../../models/user";
 import { checkAuth, getUser } from "../../utils/auth";
 import { HttpError } from "../../utils/utils";
 

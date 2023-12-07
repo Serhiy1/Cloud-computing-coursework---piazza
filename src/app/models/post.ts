@@ -1,6 +1,6 @@
 import { body, param } from "express-validator";
 import mongoose from "mongoose";
-import { model,Schema } from "mongoose";
+import { model, Schema } from "mongoose";
 
 import { GetExpiryDate } from "../utils/utils";
 
@@ -18,7 +18,7 @@ interface IPOST {
   ownerId: mongoose.Types.ObjectId;
 
   // Title of the post, not required if commenting
-  title: string | null
+  title: string | null;
 
   // Prevent multiple database calls, keep username on record.
   userName: string;
@@ -80,8 +80,8 @@ PostSchema.methods.isActive = function () {
 PostSchema.set("toJSON", {
   transform: (document, returnedObject) => {
     // Remove MongoDB _id and __v
-    returnedObject.link = `localhost:3000/posts/${returnedObject._id}`;
-    returnedObject.user_link = `localhost:3000/users/${returnedObject.ownerId}`;
+    returnedObject.link = `/posts/${returnedObject._id}`;
+    returnedObject.user_link = `/users/${returnedObject.ownerId}`;
     delete returnedObject._id;
     delete returnedObject.__v;
     delete returnedObject.ownerId;
@@ -136,7 +136,6 @@ export const V_title = () =>
     .isString()
     .isLength({ min: 1, max: 64 })
     .withMessage("the title should be text between 1 and 64 characters");
-
 
 /* validator for making sure the content of posts works */
 export const V_Content = () =>

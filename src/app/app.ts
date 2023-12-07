@@ -48,7 +48,7 @@ app.use((req, res, next) => {
 const errorHandler: ErrorRequestHandler = (err: HttpError, req, res, next) => {
   res.statusCode = err.statuscode;
   res.json({
-    error_message: err.message
+    message: err.message,
   });
 };
 app.use(errorHandler);

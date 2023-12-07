@@ -247,7 +247,7 @@
     "yocto-queue": "^0.1.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "build": "npx tsc",
     "start": "node dist/server.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon --inspect -q dist/server.js\"",
@@ -260,6 +260,8 @@
   "author": "Serhiy Pikho",
   "license": "ISC",
   "devDependencies": {
+    "@babel/preset-typescript": "^7.23.3",
+    "@faker-js/faker": "^8.3.1",
     "@types/bcrypt": "^5.0.2",
     "@types/body-parser": "^1.19.5",
     "@types/express": "^4.17.21",
@@ -275,8 +277,10 @@
     "eslint-plugin-html": "^7.1.0",
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-simple-import-sort": "^10.0.0",
+    "jest-serial-runner": "^1.2.1",
     "nodemon": "^3.0.1",
     "prettier": "^3.1.0",
+    "ts-jest": "^29.1.1",
     "typescript": "^5.3.2"
   }
 }
