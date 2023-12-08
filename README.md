@@ -226,6 +226,10 @@ POST ${host}/posts/${postID}/dislike -> dislike a post
 - `src/test/post.test.ts` covers the behaviour of posting and commenting on the app
 - `src/test/e2e.test.ts` contains all the tests specified by the worksheet
 
+**Complete Run**
+![image of all the tests passing](./imgs/Screenshot%202023-12-08%20171633.png)
+
+
 ## Phase E
 ### Deploying the application to GCP
 
