@@ -112,15 +112,15 @@ describe("successful user interactions", () => {
     // original post under 'Tech' topic
     res = await request(app).get("/posts/topics/Tech").set("Authorization", `Bearer ${user_2.token}`);
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveLength(2);
+    expect(res.body).toHaveLength(1);
   });
 
-  test("/posts endpoint returns all three posts", async () => {
+  test("/posts endpoint returns all two posts", async () => {
     // Verify the post under 'Health' topic
     const res = await request(app).get("/posts").set("Authorization", `Bearer ${user_2.token}`);
     expect(res.statusCode).toBe(200);
     console.log(res.body);
-    expect(res.body).toHaveLength(3);
+    expect(res.body).toHaveLength(2);
   });
 });
 

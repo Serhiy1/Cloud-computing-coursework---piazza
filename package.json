@@ -249,8 +249,8 @@
   "scripts": {
     "test": "jest",
     "build": "npx tsc",
-    "start": "node dist/server.js",
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon --inspect -q dist/server.js\"",
+    "start": "node dist/app/server.js",
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon --inspect -q dist/app/server.js\"",
     "lint": "eslint ./src",
     "lint:fix": "eslint ./src --fix",
     "prettier": "prettier --check ./src ",

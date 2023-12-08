@@ -1,9 +1,10 @@
 import express from "express";
 import { matchedData, validationResult } from "express-validator";
-import mongoose from "mongoose";
+import mongoose, { SortOrder } from "mongoose";
 
 import {
   createNewPost,
+  orderByQuery,
   Post,
   PostIDParam,
   TopicParam,
@@ -28,19 +29,30 @@ PostRouter.get("/topics", checkAuth, async (req, res) => {
 });
 
 /* API for listing all posts that are not comments and are not expired in a specific Topic */
-PostRouter.get("/topics/:topicID", checkAuth, TopicParam(), async (req, res, next) => {
+PostRouter.get("/topics/:topicID", checkAuth, TopicParam(), orderByQuery(), async (req, res, next) => {
+  const result = validationResult(req);
+  if (!result.isEmpty()) {
+    return next(new HttpError(400, result.array()));
+  }
   try {
-    const result = validationResult(req);
-    if (!result.isEmpty()) {
-      return next(new HttpError(400, result.array()));
-    }
 
     const topicID = matchedData(req).topicID;
     const expiryTime = GetExpiryDate();
+    const orderBy = req.query.orderBy as string;
 
-    const posts = await Post.find({ topics: topicID, parent_id: null, created: { $gte: expiryTime } }).sort({
-      Created: -1,
-    });
+    // Define a sorting object based on the orderBy value
+
+    let sortCriteria: { [key: string]: SortOrder } = { Created: -1 }; // Default sorting
+
+    if (orderBy === 'Likes') {
+      sortCriteria = { likes: -1 };
+    } else if (orderBy === 'Dislikes') {
+      sortCriteria = { dislikes: -1 };
+    } else if (orderBy === 'Activity') {
+      sortCriteria = { activity: -1 };
+    }
+
+    const posts = await Post.find({ topics: topicID, parentId: null, created: { $gte: expiryTime } }).sort(sortCriteria);
     res.status(200).json(posts);
   } catch (error) {
     const httpError = new HttpError(500, (error as Error).message);
@@ -50,42 +62,29 @@ PostRouter.get("/topics/:topicID", checkAuth, TopicParam(), async (req, res, nex
 
 /* API for listing all posts that are not comments and are expired in a specific Topic */
 PostRouter.get("/topics/:topicID/expired", checkAuth, TopicParam(), async (req, res, next) => {
+  const result = validationResult(req);
+  if (!result.isEmpty()) {
+    return next(new HttpError(400, result.array()));
+  }
   try {
-    const result = validationResult(req);
-    if (!result.isEmpty()) {
-      return next(new HttpError(400, result.array()));
-    }
 
     const topicID = matchedData(req).topicID;
     const expiryTime = GetExpiryDate();
+    const orderBy = req.query.orderBy as string;
 
-    const posts = await Post.find({ topics: topicID, parent_id: null, created: { $lte: expiryTime } }).sort({
-      Created: -1,
-    });
-    res.status(200).json(posts);
-  } catch (error) {
-    const httpError = new HttpError(500, (error as Error).message);
-    next(httpError);
-  }
-});
+    // Define a sorting object based on the orderBy value
 
-/* API for listing all posts without a topic filter, are not expired and that are not comments*/
-PostRouter.get("/", checkAuth, async (req, res, next) => {
-  try {
-    const expiryTime = GetExpiryDate();
-    const posts = await Post.find({ parent_id: null, created: { $gte: expiryTime } }).sort({ Created: -1 });
-    res.status(200).json(posts);
-  } catch (error) {
-    const httpError = new HttpError(500, (error as Error).message);
-    next(httpError);
-  }
-});
+    let sortCriteria: { [key: string]: SortOrder } = { Created: -1 }; // Default sorting
 
-/* API for listing all posts without a topic filter, are expired and that are not comments*/
-PostRouter.get("/expired", checkAuth, async (req, res, next) => {
-  try {
-    const expiryTime = GetExpiryDate();
-    const posts = await Post.find({ parent_id: null, created: { $lte: expiryTime } }).sort({ Created: -1 });
+    if (orderBy === 'Likes') {
+      sortCriteria = { likes: -1 };
+    } else if (orderBy === 'Dislikes') {
+      sortCriteria = { dislikes: -1 };
+    } else if (orderBy === 'Activity') {
+      sortCriteria = { activity: -1 };
+    }
+
+    const posts = await Post.find({ topics: topicID, parentId: null, created: { $lte: expiryTime } }).sort(sortCriteria);
     res.status(200).json(posts);
   } catch (error) {
     const httpError = new HttpError(500, (error as Error).message);
@@ -94,10 +93,60 @@ PostRouter.get("/expired", checkAuth, async (req, res, next) => {
 });
 
 /* API for listing all posts without a topic filter, are expired and that are not comments*/
-PostRouter.get("/", checkAuth, async (req, res, next) => {
+PostRouter.get("/expired", checkAuth, orderByQuery(), async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     const expiryTime = GetExpiryDate();
-    const posts = await Post.find({ parent_id: null, created: { $lte: expiryTime } }).sort({ Created: -1 });
+    const orderBy = req.query.orderBy as string;
+
+    // Define a sorting object based on the orderBy value
+
+    let sortCriteria: { [key: string]: SortOrder } = { Created: -1 }; // Default sorting
+
+    if (orderBy === 'Likes') {
+      sortCriteria = { likes: -1 };
+    } else if (orderBy === 'Dislikes') {
+      sortCriteria = { dislikes: -1 };
+    } else if (orderBy === 'Activity') {
+      sortCriteria = { activity: -1 };
+    }
+
+    const posts = await Post.find({ parentId: null, created: { $lte: expiryTime } }).sort(sortCriteria);
+    res.status(200).json(posts);
+  } catch (error) {
+    const httpError = new HttpError(500, (error as Error).message);
+    next(httpError);
+  }
+});
+
+/* API for listing all posts without a topic filter, are expired and that are not comments*/
+PostRouter.get("/", checkAuth, orderByQuery(), async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const expiryTime = GetExpiryDate();
+    const orderBy = req.query.orderBy as string;
+
+    // Define a sorting object based on the orderBy value
+
+    let sortCriteria: { [key: string]: SortOrder } = { Created: -1 }; // Default sorting
+
+    if (orderBy === 'Likes') {
+      sortCriteria = { likes: -1 };
+    } else if (orderBy === 'Dislikes') {
+      sortCriteria = { dislikes: -1 };
+    } else if (orderBy === 'Activity') {
+      sortCriteria = { activity: -1 };
+    }
+
+    const posts = await Post.find({ parentId: null, created: { $gte: expiryTime } }).sort(sortCriteria);
     res.status(200).json(posts);
   } catch (error) {
     const httpError = new HttpError(500, (error as Error).message);
@@ -152,6 +201,7 @@ PostRouter.post("/", checkAuth, V_title(), V_Content(), V_Topic(), async (req, r
       childIds: [],
       likes: 0,
       dislikes: 0,
+      activity: 0,
     });
 
     const savedPost = await post.save();
@@ -199,6 +249,7 @@ PostRouter.post("/:postID", checkAuth, PostIDParam(), V_Content(), async (req, r
       childIds: [],
       likes: 0,
       dislikes: 0,
+      activity: 0,
     });
 
     parentPost.childIds.push(comment._id);
@@ -244,7 +295,7 @@ PostRouter.post("/:postID/like", checkAuth, PostIDParam(), async (req, res, next
     }
 
     if (post.ownerId == user.id) {
-      return next(new HttpError(400, "you cannot like your own post"))
+      return next(new HttpError(400, "you cannot like your own post"));
     }
 
     // Check if the user has already liked this post
@@ -254,14 +305,17 @@ PostRouter.post("/:postID/like", checkAuth, PostIDParam(), async (req, res, next
     if (hasLiked) {
       // User has already liked the post, so decrement like and remove from liked comments
       post.likes = Math.max(0, post.likes - 1); // Ensure likes don't go negative
+      post.activity = Math.max(0, post.activity - 1);
       user.likedComments = user.likedComments.filter((commentID) => commentID.toString() !== postID);
     } else if (hasDisLiked) {
       // User has already disliked the post, so decrement dislikes and remove from disliked comments
       post.dislikes = Math.max(0, post.dislikes - 1); // Ensure dislikes don't go negative
+      post.activity = Math.max(0, post.activity - 1);
       user.diLikedComments = user.diLikedComments.filter((commentID) => commentID.toString() !== postID);
     } else {
       // User has not liked the post, so increment like and add to liked comments
       post.likes = (post.likes || 0) + 1;
+      post.activity = (post.activity || 0) + 1;
       user.likedComments.push(postID);
     }
 
@@ -307,9 +361,9 @@ PostRouter.post("/:postID/dislike", checkAuth, PostIDParam(), async (req, res, n
     }
 
     if (post.ownerId == user.id) {
-      return next(new HttpError(400, "you cannot dislike your own post"))
+      return next(new HttpError(400, "you cannot dislike your own post"));
     }
-    
+
     // Check if the user has already disliked this post
     const hasLiked = user.likedComments.includes(postID);
     const hasDisLiked = user.diLikedComments.includes(postID);
@@ -317,14 +371,17 @@ PostRouter.post("/:postID/dislike", checkAuth, PostIDParam(), async (req, res, n
     if (hasDisLiked) {
       // User has already disliked the post, so decrement dislike and remove from disliked comments
       post.dislikes = Math.max(0, post.dislikes - 1); // Ensure likes don't go negative
+      post.activity = Math.max(0, post.activity - 1);
       user.diLikedComments = user.diLikedComments.filter((commentID) => commentID.toString() !== postID);
     } else if (hasLiked) {
       // User has already liked the post, so decrement like and remove from liked comments
       post.likes = Math.max(0, post.likes - 1); // Ensure likes don't go negative
+      post.activity = Math.max(0, post.activity - 1);
       user.likedComments = user.likedComments.filter((commentID) => commentID.toString() !== postID);
     } else {
       // User has not liked the post, so increment dislike and add to liked comments
       post.dislikes = (post.dislikes || 0) + 1;
+      post.activity = (post.activity || 0) + 1;
       user.diLikedComments.push(postID);
     }
 

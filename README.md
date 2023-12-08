@@ -231,8 +231,8 @@ POST ${host}/posts/${postID}/dislike -> dislike a post
 
 ## TODO left
 
-1. Implement orderBy queries
-  - Default ordering is by time
-  - Order by likes, dislikes, activity (all three combined)
-2. Implement the tests stated out in the document
+1. Document orderBy queries
+2. Document building and deploying the app
 
+  - docker build -t myapp -f .devcontainer/Dockerfile .
+  - docker run --env-file .env myapp

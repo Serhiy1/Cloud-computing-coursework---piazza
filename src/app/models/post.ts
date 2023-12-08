@@ -1,4 +1,4 @@
-import { body, param } from "express-validator";
+import { body, param, query } from "express-validator";
 import mongoose from "mongoose";
 import { model, Schema } from "mongoose";
 
@@ -7,7 +7,7 @@ import { GetExpiryDate } from "../utils/utils";
 export enum ValidTopics {
   Politics = "Politics",
   Health = "Health",
-  Sport = "Sport",
+  Sport = "Sports",
   Tech = "Tech",
 }
 
@@ -34,6 +34,7 @@ interface IPOST {
   // interactions with the post
   likes: number;
   dislikes: number;
+  activity: number;
 
   // Whether interaction is allowed on the post will be calculated on the fly
   created: Date;
@@ -53,6 +54,7 @@ const PostSchema = new Schema<IPOST>({
   content: { type: String, required: true },
   likes: { type: Number, required: false, default: 0 },
   dislikes: { type: Number, required: false, default: 0 },
+  activity: { type: Number, required: false, default: 0 },
   created: { type: Date, required: true },
   topics: { type: [String], enum: Object.values(ValidTopics), required: true },
 });
@@ -153,6 +155,12 @@ export const V_Topic = () =>
       return topics.every((topic: ValidTopics) => Object.values(ValidTopics).includes(topic));
     })
     .withMessage("Invalid topic(s) provided");
+
+export const orderByQuery = () =>
+   query('orderBy')
+    .optional()
+    .isIn(['Likes', 'Dislikes', 'Activity'])
+    .withMessage('Invalid order by value. Allowed values are Likes, Dislikes, Activity.');
 
 /* validator for TopicId paramater */
 export const TopicParam = () =>

@@ -1,3 +1,4 @@
+import { expect } from "@jest/globals";
 import { faker } from "@faker-js/faker";
 import { Express } from "express";
 import request from "supertest";
@@ -16,7 +17,7 @@ export class Person {
     this.app = app;
     this.userName = faker.internet.userName();
     this.email = faker.internet.email();
-    this.password = faker.internet.password({ length: 8, prefix: "@1T_" });
+    this.password = faker.internet.password({ length: 12, prefix: "@1T_" });
     this.token = "";
     this.token_info;
   }
@@ -27,13 +28,16 @@ export class Person {
       userName: this.userName,
       password: this.password,
     };
-    await request(this.app).post("/user/signup").send(user_info);
+    var res = await request(this.app).post("/user/signup").send(user_info);
+    console.log(res.body);
+    expect(res.status).toBe(201);
 
     const signInInfo = {
       email: this.email,
       password: this.password,
     };
-    const res = await request(this.app).post("/user/login").send(signInInfo);
+    res = await request(this.app).post("/user/login").send(signInInfo);
+    expect(res.status).toBe(200);
     this.token = res.body.token as string;
   }
 }
@@ -44,3 +48,26 @@ export async function createNewUser(app: Express) {
   user.token_info = jwt.decode(user.token) as tokenInfo;
   return user;
 }
+
+
+export const waitForExpiry = async (app: Express, postLink: string, token: string, maxAttempts = 10, pollInterval = 1000) => {
+  let postStatus = "";
+
+  // Function to get the current status of the post
+  const checkPostStatus = async () => {
+    const response = await request(app).get(postLink).set("Authorization", `Bearer ${token}`);
+    if (response.statusCode === 200) {
+      postStatus = response.body.post.status;
+    }
+  };
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await checkPostStatus();
+    if (postStatus === "Expired") {
+      break;
+    }
+    await new Promise(resolve => setTimeout(resolve, pollInterval));
+  }
+
+  return postStatus;
+};
