@@ -90,7 +90,7 @@ test("Signup with weak password should fail", async () => {
   expect(res.body.message).toBeInstanceOf(Array);
 });
 
-/* Closing database connection after each test. */
+/* Closing database connection at the end of the suite. */
 afterAll(async () => {
   await mongo.stop();
 });

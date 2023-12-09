@@ -38,7 +38,7 @@ describe("Piazza API Tests", () => {
   let OlgaPost: request.Response;
   let NickPost: request.Response;
   let MaryPost: request.Response;
-  let NestorPost : request.Response
+  let NestorPost: request.Response;
 
   test("TC 3: Olga makes an unauthorized API call", async () => {
     const res = await request(app).get("/posts");
@@ -204,74 +204,85 @@ describe("Piazza API Tests", () => {
 
   test("TC 11: Mary likes her own post", async () => {
     // This call should be unsuccessful; in Piazza, a post owner cannot like their messages.
-    const marySelfLike = await request(app).post(`${MaryPost.body.link}/like`).set("Authorization", `Bearer ${Mary.token}`);
+    const marySelfLike = await request(app)
+      .post(`${MaryPost.body.link}/like`)
+      .set("Authorization", `Bearer ${Mary.token}`);
     expect(marySelfLike.statusCode).toBe(400);
   });
 
   test("TC 12: Nick and Olga comment on Mary's post", async () => {
     // in a round-robin fashion (one after the other, adding at least two comments each).
 
-    const NickComment1 = {content: "this is Nicks First comment"}
-    const OlgaComment1 = {content: "this is Olga's First comment"}
+    const NickComment1 = { content: "this is Nicks First comment" };
+    const OlgaComment1 = { content: "this is Olga's First comment" };
 
-    const NickComment2 = {content: "this is Nicks Second comment"}
-    const OlgaComment2 = {content: "this is Olga's Second comment"}
+    const NickComment2 = { content: "this is Nicks Second comment" };
+    const OlgaComment2 = { content: "this is Olga's Second comment" };
 
-    const req1 = await request(app).post(`${MaryPost.body.link}`).set("Authorization", `Bearer ${Nick.token}`).send(NickComment1);
-    expect(req1.statusCode).toBe(201)
-    const req2 = await request(app).post(`${MaryPost.body.link}`).set("Authorization", `Bearer ${Olga.token}`).send(OlgaComment1);
-    expect(req2.statusCode).toBe(201)
-    const req3 = await request(app).post(`${MaryPost.body.link}`).set("Authorization", `Bearer ${Nick.token}`).send(NickComment2);
-    expect(req3.statusCode).toBe(201)
-    const req4 = await request(app).post(`${MaryPost.body.link}`).set("Authorization", `Bearer ${Olga.token}`).send(OlgaComment2);
-    expect(req4.statusCode).toBe(201)
-
+    const req1 = await request(app)
+      .post(`${MaryPost.body.link}`)
+      .set("Authorization", `Bearer ${Nick.token}`)
+      .send(NickComment1);
+    expect(req1.statusCode).toBe(201);
+    const req2 = await request(app)
+      .post(`${MaryPost.body.link}`)
+      .set("Authorization", `Bearer ${Olga.token}`)
+      .send(OlgaComment1);
+    expect(req2.statusCode).toBe(201);
+    const req3 = await request(app)
+      .post(`${MaryPost.body.link}`)
+      .set("Authorization", `Bearer ${Nick.token}`)
+      .send(NickComment2);
+    expect(req3.statusCode).toBe(201);
+    const req4 = await request(app)
+      .post(`${MaryPost.body.link}`)
+      .set("Authorization", `Bearer ${Olga.token}`)
+      .send(OlgaComment2);
+    expect(req4.statusCode).toBe(201);
   });
 
   test("TC 13: Nick browses all available posts in the Tech topic", async () => {
-
     const NickList = await request(app).get("/posts/topics/Tech").set("Authorization", `Bearer ${Nick.token}`);
-    const UpdatedMaryPost =  NickList.body.find((post : {link : string}) => post.link === MaryPost.body.link);
-    expect(UpdatedMaryPost.comments).toBe(4)
+    const UpdatedMaryPost = NickList.body.find((post: { link: string }) => post.link === MaryPost.body.link);
+    expect(UpdatedMaryPost.comments).toBe(4);
   });
 
-  test("TC 14: Nestor posts a message in the Health topic", async () => {const content = {
-    title: "Nestor's health post",
-    content: "This is a post about health",
-    topics: ["Health"],
-  };
+  test("TC 14: Nestor posts a message in the Health topic", async () => {
+    const content = {
+      title: "Nestor's health post",
+      content: "This is a post about health",
+      topics: ["Health"],
+    };
 
-  NestorPost = await request(app).post("/posts").set("Authorization", `Bearer ${Nestor.token}`).send(content);
-  expect(NestorPost.statusCode).toBe(201);
+    NestorPost = await request(app).post("/posts").set("Authorization", `Bearer ${Nestor.token}`).send(content);
+    expect(NestorPost.statusCode).toBe(201);
 
-  // user information is correct
-  expect(NestorPost.body.user_link).toContain(Nestor.token_info?.id);
-  expect(NestorPost.body.userName).toBe(Nestor.userName);
+    // user information is correct
+    expect(NestorPost.body.user_link).toContain(Nestor.token_info?.id);
+    expect(NestorPost.body.userName).toBe(Nestor.userName);
 
-  // post information
-  expect(NestorPost.body.post_type).toBe("Post");
-  expect(NestorPost.body.status).toBe("Live");
-  expect(NestorPost.body.comments).toBe(0);
-
-});
+    // post information
+    expect(NestorPost.body.post_type).toBe("Post");
+    expect(NestorPost.body.status).toBe("Live");
+    expect(NestorPost.body.comments).toBe(0);
+  });
 
   test("TC 15: Mary browses all available posts on the Health topic", async () => {
-
     // Expect to only find nestors post here
     const MaryList = await request(app).get("/posts/topics/Health").set("Authorization", `Bearer ${Mary.token}`);
     expect(MaryList.statusCode).toBe(200);
-    expect(MaryList.body).toHaveLength(1)
-    expect(MaryList.body[0].link).toBe(NestorPost.body.link)
-
+    expect(MaryList.body).toHaveLength(1);
+    expect(MaryList.body[0].link).toBe(NestorPost.body.link);
   });
 
   test("TC 16: Mary posts a comment in Nestor's message on the Health topic", async () => {
-
     const comment = { content: "Mary's comment on Nestor's post" };
-    const response = await request(app).post(NestorPost.body.link).set("Authorization", `Bearer ${Mary.token}`).send(comment);
+    const response = await request(app)
+      .post(NestorPost.body.link)
+      .set("Authorization", `Bearer ${Mary.token}`)
+      .send(comment);
     expect(response.statusCode).toBe(201);
     expect(response.body.content).toEqual(comment.content);
-
   });
 
   // TC 17 is last, as we are wating for expiry
@@ -279,12 +290,14 @@ describe("Piazza API Tests", () => {
   test("TC 18: Nestor browses all messages on the Health topic", async () => {
     const NestorList = await request(app).get("/posts/topics/Health").set("Authorization", `Bearer ${Nestor.token}`);
     expect(NestorList.statusCode).toBe(200);
-    expect(NestorList.body).toHaveLength(1)
-    expect(NestorList.body[0].link).toBe(NestorPost.body.link)
+    expect(NestorList.body).toHaveLength(1);
+    expect(NestorList.body[0].link).toBe(NestorPost.body.link);
   });
 
   test("TC 19. Nick browses all the expired messages on the Sports topic", async () => {
-    const NickList = await request(app).get("/posts/topics/Sports/expired").set("Authorization", `Bearer ${Nick.token}`);
+    const NickList = await request(app)
+      .get("/posts/topics/Sports/expired")
+      .set("Authorization", `Bearer ${Nick.token}`);
     expect(NickList.statusCode).toBe(200);
     expect(NickList.body.length).toBe(0);
   });
@@ -301,7 +314,6 @@ describe("Piazza API Tests", () => {
     // Check if Mary's post is the first one in the response
     const topPost = posts[0];
     expect(topPost.link).toBe(MaryPost.body.link);
-
   });
 
   test("TC 17: Mary dislikes Nestor's message on the Health topic after expiration", async () => {
@@ -309,14 +321,14 @@ describe("Piazza API Tests", () => {
     expect(postStatus).toBe("Expired");
 
     // attempt to dislike the post after its been expired
-    const dislikeResponse = await request(app).post(`${NestorPost.body.link}/dislike`).set("Authorization", `Bearer ${Mary.token}`);
+    const dislikeResponse = await request(app)
+      .post(`${NestorPost.body.link}/dislike`)
+      .set("Authorization", `Bearer ${Mary.token}`);
     expect(dislikeResponse.statusCode).toBe(400);
-
   });
-
 });
 
-/* Closing database connection after each test. */
+/* Closing database connection at the end of the suite. */
 afterAll(async () => {
   await mongo.stop();
 });

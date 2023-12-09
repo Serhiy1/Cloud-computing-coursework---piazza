@@ -49,8 +49,13 @@ export async function createNewUser(app: Express) {
   return user;
 }
 
-
-export const waitForExpiry = async (app: Express, postLink: string, token: string, maxAttempts = 10, pollInterval = 1000) => {
+export const waitForExpiry = async (
+  app: Express,
+  postLink: string,
+  token: string,
+  maxAttempts = 10,
+  pollInterval = 1000
+) => {
   let postStatus = "";
 
   // Function to get the current status of the post
@@ -66,7 +71,7 @@ export const waitForExpiry = async (app: Express, postLink: string, token: strin
     if (postStatus === "Expired") {
       break;
     }
-    await new Promise(resolve => setTimeout(resolve, pollInterval));
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
   }
 
   return postStatus;

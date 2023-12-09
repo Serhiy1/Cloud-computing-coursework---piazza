@@ -6,9 +6,6 @@
     },
   "remoteUser": "node",
 
-  "features": {
-    "ghcr.io/dhoeric/features/google-cloud-cli:1": {}
-  },
   "customizations": {
     "vscode": {
       "extensions": [

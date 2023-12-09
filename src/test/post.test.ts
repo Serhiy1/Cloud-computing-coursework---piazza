@@ -174,7 +174,7 @@ describe("Post creation validation", () => {
   });
 });
 
-/* Closing database connection after each test. */
+/* Closing database connection at the end of the suite. */
 afterAll(async () => {
   await mongo.stop();
 });

@@ -157,10 +157,10 @@ export const V_Topic = () =>
     .withMessage("Invalid topic(s) provided");
 
 export const orderByQuery = () =>
-   query('orderBy')
+  query("orderBy")
     .optional()
-    .isIn(['Likes', 'Dislikes', 'Activity'])
-    .withMessage('Invalid order by value. Allowed values are Likes, Dislikes, Activity.');
+    .isIn(["Likes", "Dislikes", "Activity"])
+    .withMessage("Invalid order by value. Allowed values are Likes, Dislikes, Activity.");
 
 /* validator for TopicId paramater */
 export const TopicParam = () =>

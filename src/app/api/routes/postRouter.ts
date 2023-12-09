@@ -35,7 +35,6 @@ PostRouter.get("/topics/:topicID", checkAuth, TopicParam(), orderByQuery(), asyn
     return next(new HttpError(400, result.array()));
   }
   try {
-
     const topicID = matchedData(req).topicID;
     const expiryTime = GetExpiryDate();
     const orderBy = req.query.orderBy as string;
@@ -44,15 +43,17 @@ PostRouter.get("/topics/:topicID", checkAuth, TopicParam(), orderByQuery(), asyn
 
     let sortCriteria: { [key: string]: SortOrder } = { Created: -1 }; // Default sorting
 
-    if (orderBy === 'Likes') {
+    if (orderBy === "Likes") {
       sortCriteria = { likes: -1 };
-    } else if (orderBy === 'Dislikes') {
+    } else if (orderBy === "Dislikes") {
       sortCriteria = { dislikes: -1 };
-    } else if (orderBy === 'Activity') {
+    } else if (orderBy === "Activity") {
       sortCriteria = { activity: -1 };
     }
 
-    const posts = await Post.find({ topics: topicID, parentId: null, created: { $gte: expiryTime } }).sort(sortCriteria);
+    const posts = await Post.find({ topics: topicID, parentId: null, created: { $gte: expiryTime } }).sort(
+      sortCriteria
+    );
     res.status(200).json(posts);
   } catch (error) {
     const httpError = new HttpError(500, (error as Error).message);
@@ -67,7 +68,6 @@ PostRouter.get("/topics/:topicID/expired", checkAuth, TopicParam(), async (req, 
     return next(new HttpError(400, result.array()));
   }
   try {
-
     const topicID = matchedData(req).topicID;
     const expiryTime = GetExpiryDate();
     const orderBy = req.query.orderBy as string;
@@ -76,15 +76,17 @@ PostRouter.get("/topics/:topicID/expired", checkAuth, TopicParam(), async (req, 
 
     let sortCriteria: { [key: string]: SortOrder } = { Created: -1 }; // Default sorting
 
-    if (orderBy === 'Likes') {
+    if (orderBy === "Likes") {
       sortCriteria = { likes: -1 };
-    } else if (orderBy === 'Dislikes') {
+    } else if (orderBy === "Dislikes") {
       sortCriteria = { dislikes: -1 };
-    } else if (orderBy === 'Activity') {
+    } else if (orderBy === "Activity") {
       sortCriteria = { activity: -1 };
     }
 
-    const posts = await Post.find({ topics: topicID, parentId: null, created: { $lte: expiryTime } }).sort(sortCriteria);
+    const posts = await Post.find({ topics: topicID, parentId: null, created: { $lte: expiryTime } }).sort(
+      sortCriteria
+    );
     res.status(200).json(posts);
   } catch (error) {
     const httpError = new HttpError(500, (error as Error).message);
@@ -107,11 +109,11 @@ PostRouter.get("/expired", checkAuth, orderByQuery(), async (req, res, next) => 
 
     let sortCriteria: { [key: string]: SortOrder } = { Created: -1 }; // Default sorting
 
-    if (orderBy === 'Likes') {
+    if (orderBy === "Likes") {
       sortCriteria = { likes: -1 };
-    } else if (orderBy === 'Dislikes') {
+    } else if (orderBy === "Dislikes") {
       sortCriteria = { dislikes: -1 };
-    } else if (orderBy === 'Activity') {
+    } else if (orderBy === "Activity") {
       sortCriteria = { activity: -1 };
     }
 
@@ -138,11 +140,11 @@ PostRouter.get("/", checkAuth, orderByQuery(), async (req, res, next) => {
 
     let sortCriteria: { [key: string]: SortOrder } = { Created: -1 }; // Default sorting
 
-    if (orderBy === 'Likes') {
+    if (orderBy === "Likes") {
       sortCriteria = { likes: -1 };
-    } else if (orderBy === 'Dislikes') {
+    } else if (orderBy === "Dislikes") {
       sortCriteria = { dislikes: -1 };
-    } else if (orderBy === 'Activity') {
+    } else if (orderBy === "Activity") {
       sortCriteria = { activity: -1 };
     }
 

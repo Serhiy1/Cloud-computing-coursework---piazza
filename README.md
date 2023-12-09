@@ -24,18 +24,18 @@
    4. bycrypt - hashing passwords so they are not stored as plain text
    5. jsonwebtoken - For creating the JSON web tokens for oauth
 
-5. Project structure - The folder structure of the project follows industry standards, all code is located in the `src` folder. The Main entry points are in the root of this folder.
-    - `./app/api/routes` subfolder contains specific handlers for the different API endpoints
-    - `./app/models` subfolder contains the types for database / API interaction
-    - `./app/utils` contains utility code and classes
-    - `./testing` Contains all the test code
+5. Project structure - The folder structure of the project follows industry standards, all code is located in the `src` folder.
+    - `.src/app/api/routes` subfolder contains specific handlers for the different API endpoints
+    - `.src/app/models` subfolder contains the types for database / API interaction
+    - `.src/app/utils` contains utility code and classes
+    - `.src/testing` Contains all the test code
 
-    The `dist` folder contains the transpiled javascript that is run by node.
+    The `./dist` folder contains the transpiled javascript that is run by node.
 
 ### Running the app locally.
 
 1. Open the project in VS code
-2. Copy `.env-empty-copy` and rename it to `.env`. Add all the secure details for th deployment
+2. Copy `.env-empty-copy` and rename it to `.env`. Add all the secure details for the deployment
 3. Install the remote development extension for VS code
 4. Re-open the project inside the development container - This should start the docker image and attach VS code to it.
 5. run `npm run dev` to start the dev server
@@ -235,8 +235,7 @@ POST ${host}/posts/${postID}/dislike -> dislike a post
 
 ## TODO left
 
-1. Document orderBy queries
 2. Document building and deploying the app
 
-  - docker build -t myapp -f .devcontainer/Dockerfile .
-  - docker run --env-file .env myapp
+  - docker build -t piazza -f .devcontainer/Dockerfile .
+  - docker run -p 80:80 --env-file .env piazza
