@@ -2,7 +2,7 @@
 
 ## Phase A - Install and deploy software in virtualised environments
 
-Github link: https://github.com/Serhiy1/Cloud-computing-courseworkpiazza
+Github link: https://github.com/Serhiy1/Cloud-computing-coursework---piazza
 
 1. The development environment uses a VS code [development container](https://code.visualstudio.com/learn/develop-cloud/containers).
    - The development container is based of the default nodeJs Docker image
@@ -35,6 +35,8 @@ Github link: https://github.com/Serhiy1/Cloud-computing-courseworkpiazza
     - `.src/testing` Contains all the test code
 
     The `./dist` folder contains the compiled javascript that is run by node.
+    
+<div style="page-break-after: always;"></div>
 
 ### Running the app locally.
 
@@ -75,6 +77,9 @@ GET ${host}/user/${userID} -> User can see the public details of other users
   "userName" : "${username}"
 }
 ```
+
+<div style="page-break-after: always;"></div>
+
 ### When logging in the following payload needs to be sent
 `POST user/login`
 ```json
@@ -106,18 +111,15 @@ When A user is successfully found the returned format is
     ]
   },
   "posts": [
-    {
-      ${Post JSON}
-    }
+    // ${Post JSON}
   ],
   "comments": [
-    {
-      ${Post JSON}
-    }
-
+    // ${Post JSON}
   ]
 }
 ```
+
+<div style="page-break-after: always;"></div>
 
 ### Database design for the user 
 ```js
@@ -137,6 +139,8 @@ const userSchema = new Schema<IUser>({
   - User documents will not be under such a high interaction rate, so more expensive find and remove operations are done on them instead
 - Posts are not stored on the User document, Posts made by a user a found by listing all Post documents with a matching user ID     
 
+
+<div style="page-break-after: always;"></div>
 
 ## Phase C - Developing the API for creating and viewing posts
 
@@ -172,6 +176,8 @@ POST ${host}/posts/${postID}/dislike -> dislike a post
 
 - All posts require atlas one topic entry in `"politics", "Health", "sport", "Tech"`
 
+<div style="page-break-after: always;"></div>
+
 ### Liking, disliking and commenting on Posts
 
 - when a person likes a post that they have already disliked it un-does the dislike and vice versa
@@ -203,22 +209,25 @@ by default the ordering is by created date
   "topics": ["Tech"],
   "link": "${host}/posts/${mongo ID}",
   "user_link": "${host}/users/${mongo ID}",
-  "post_type": "Post",  # or Comment
+  "post_type": "Post",  // or Comment
   "comments": 1,
-  "status": "Active" # or "inactive",
+  "status": "Active", // or "inactive",
   "Expires_in" : "1 hour"
 }
 ```
-### When creating a post the user needs to post
+
+<div style="page-break-after: always;"></div>
+
+### Creating a post
 `POST /posts`
 ```json
 {
-  "title" : "${title}"
-  "content" : "${content}",,
+  "title" : "${title}",
+  "content" : "${content}",
   "topics" : ["${valid topic}"]
 }
 ```
-### When a user wants to comment on a post
+### Commenting on a post
 `POST /posts/${postId}`
 ```json
 {
@@ -245,7 +254,7 @@ const PostSchema = new Schema<IPOST>({
   topics: { type: [String], enum: Object.values(ValidTopics), required: true },
 });
 ```
-- The Posts Document represents both root posts and comments
+- The Post Document represents both root posts and comments
 - With performance in mind there the number of references to other documents is kept to a minimum
   - Since there are no deletions only append operations need to happen on the document.
   - Who liked or disliked a post is not tracked on the post itself
@@ -275,8 +284,10 @@ const PostSchema = new Schema<IPOST>({
 - `src/test/OrderBy.test.ts` contains all the tests specific to the order of listing posts
 - `src/test/utils.ts` contains code for common functionality used in the tests
 
-### Complete Run  
-![image of all the tests passing](./images/Screenshot%202023-12-08%20171633.png)
+<div style="page-break-after: always;"></div>
+
+### Complete run of all the tests  
+<img src="./images/Screenshot%202023-12-08%20171633.png" alt="drawing" style="height:950px;"/>
 
 
 ## Phase E - Deploying the application to GCP
@@ -299,7 +310,12 @@ const PostSchema = new Schema<IPOST>({
 6. Run the app with the following command `docker run -p 80:80 --env-file .env piazza`
 ![picture 4](images/4be3aa9159673c9e30b99eddd57cf5dd33802a994079914c4bb0fd9c10dffb15.png)
 
+<div style="page-break-after: always;"></div>
+
 7. Testing the app works across the internet
+
+#### Note the Public IP address that is being used
+
 ![picture 5](images/a6baa7ec87bd7484a13d20ab30376d27d9844a2185f1c25067c75a5c65959cf2.png)
 ![picture 6](images/b01cea0ed2426a70ca527e34a3f0b88335b844679d39db856fe09649298fe831.png)
 ![picture 7](images/ad13208ce251874ec9c6ba1ee899e81ea2a5f5e599d95946d08fc65ea88223cc.png)
